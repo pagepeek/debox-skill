@@ -1,17 +1,19 @@
 ---
-name: debox skill
-description: Use when an agent needs to use DeBox OpenPlatform for safe one-shot community operations such as sending group/private messages, checking DeBox credentials, parsing group IDs, or guiding DeBox Bot registration, MiniApp, ChatWidget, or Shares integration. Prefer the bundled debox/scripts/debox.sh wrapper for executable operations and do not use for long-running Bot runtime management.
+name: debox-skill
+description: Use when an agent needs DeBox OpenPlatform help for safe one-shot community operations such as group/private messages, credential checks, group ID parsing, Bot registration guidance, MiniApp guidance, ChatWidget embedding, or Shares safety review.
 ---
 
 # debox skill
 
 Use this skill to help an agent use DeBox as a community action surface without hand-writing DeBox API requests.
 
+Implementation note: this skeleton becomes complete only after `debox/scripts/debox.sh` and the referenced files exist.
+
 ## Scope
 
 This skill supports:
 
-- Sending DeBox group and private messages through `scripts/debox.sh`.
+- Sending DeBox group and private messages through `debox/scripts/debox.sh`.
 - Checking local DeBox credential readiness.
 - Parsing and validating DeBox group IDs.
 - Guiding user-owned Bot registration.
@@ -29,7 +31,7 @@ This skill does not support:
 
 Classify the user's request:
 
-- **One-shot message or lookup**: use `scripts/debox.sh` and include `--json`.
+- **One-shot message or lookup**: use `debox/scripts/debox.sh` and include `--json`.
 - **Credentials or setup**: read `references/credentials.md`.
 - **Group/private messaging**: read `references/messaging.md`.
 - **Bot registration**: read `references/bot-registration.md`.
@@ -52,7 +54,7 @@ Before sending messages, run:
 debox/scripts/debox.sh env check --json
 ```
 
-Do not call DeBox OpenPlatform with raw `curl` unless `scripts/debox.sh` is unavailable and the user explicitly accepts the fallback.
+Do not call DeBox OpenPlatform with raw `curl` unless `debox/scripts/debox.sh` is unavailable and the user explicitly accepts the fallback.
 
 ## Credential Rules
 
@@ -65,13 +67,13 @@ DEBOX_APP_SECRET=
 DEBOX_WEBHOOK_KEY=
 ```
 
-Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. The only exception is `webhook verify --header-api-key`, where the value is a received request header being compared with `DEBOX_WEBHOOK_KEY`.
+Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification should use the CLI's safe input mode once available; avoid placing header values in shell history or logs.
 
 ## Required Output Handling
 
 For agent-initiated commands, include `--json` and trust the exit code:
 
-- Exit code `0` means the JSON should contain `"ok": true`.
-- Non-zero exit means the JSON should contain `"ok": false` and an `error.hint`.
+- Exit code `0` means the JSON must contain `"ok": true`.
+- Non-zero exit means the JSON must contain `"ok": false` and an `error.hint`.
 
 Report success with the DeBox target and returned identifier. Report failure with the CLI's structured hint.
