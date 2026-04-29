@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WRAPPER="$ROOT_DIR/debox/scripts/debox.sh"
+TMP_DIRS=()
 
 fail() {
   echo "FAIL: $*" >&2
@@ -17,22 +18,44 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local haystack="$1"
+  local needle="$2"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    fail "expected output not to contain '$needle', got: $haystack"
+  fi
+}
+
 assert_file_exists() {
   local path="$1"
   [[ -f "$path" ]] || fail "expected file to exist: $path"
 }
 
-cleanup_tmp() {
-  local path="$1"
-  rm -rf "$path"
+make_tmp_dir() {
+  local var_name="$1"
+  local created
+  created="$(mktemp -d)"
+  TMP_DIRS+=("$created")
+  printf -v "$var_name" '%s' "$created"
 }
+
+cleanup_all() {
+  local path
+  for path in "${TMP_DIRS[@]}"; do
+    rm -rf "$path"
+  done
+}
+
+trap cleanup_all EXIT
 
 sha256_file() {
   local path="$1"
   if command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$path" | awk '{print $1}'
-  else
+  elif command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$path" | awk '{print $1}'
+  else
+    fail "missing SHA-256 tool"
   fi
 }
 
@@ -62,7 +85,7 @@ run_with_fake_release() {
   local release_root="$tmp/releases"
   local cache_dir="$tmp/cache"
   local version="0.1.0"
-  local platform="${DEBOX_TEST_PLATFORM:-darwin-arm64}"
+  local platform="darwin-arm64"
 
   make_fake_release "$release_root" "$version" "$platform"
 
@@ -70,13 +93,13 @@ run_with_fake_release() {
   DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
   DEBOX_SKILL_CACHE_DIR="$cache_dir" \
   DEBOX_SKILL_TEST_PLATFORM="$platform" \
+  DEBOX_SKILL_SKIP_CHECKSUM="0" \
   "$WRAPPER" "$@"
 }
 
 test_downloads_and_execs_cli() {
   local tmp
-  tmp="$(mktemp -d)"
-  trap 'cleanup_tmp "$tmp"' RETURN
+  make_tmp_dir tmp
 
   local output
   output="$(run_with_fake_release "$tmp" env check --json)"
@@ -88,8 +111,7 @@ test_downloads_and_execs_cli() {
 
 test_cache_hit_execs_without_second_download() {
   local tmp
-  tmp="$(mktemp -d)"
-  trap 'cleanup_tmp "$tmp"' RETURN
+  make_tmp_dir tmp
 
   run_with_fake_release "$tmp" message send-group --json >/dev/null
 
@@ -101,6 +123,7 @@ test_cache_hit_execs_without_second_download() {
     DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
     DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
     DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
     "$WRAPPER" message send-group --json
   )"
   assert_contains "$output" '"ok":true'
@@ -110,8 +133,7 @@ test_cache_hit_execs_without_second_download() {
 
 test_checksum_mismatch_fails_closed() {
   local tmp
-  tmp="$(mktemp -d)"
-  trap 'cleanup_tmp "$tmp"' RETURN
+  make_tmp_dir tmp
 
   local release_root="$tmp/releases"
   local release_dir="$release_root/v0.1.0"
@@ -130,6 +152,7 @@ BIN
     DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
     DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
     DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
     "$WRAPPER" env check --json 2>&1
   )"
   local status=$?
@@ -139,12 +162,12 @@ BIN
   assert_contains "$output" '"ok":false'
   assert_contains "$output" 'CHECKSUM_MISMATCH'
   assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'should-not-run'
 }
 
 test_unsupported_platform_json_error() {
   local tmp
-  tmp="$(mktemp -d)"
-  trap 'cleanup_tmp "$tmp"' RETURN
+  make_tmp_dir tmp
 
   set +e
   local output
@@ -153,6 +176,7 @@ test_unsupported_platform_json_error() {
     DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
     DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
     DEBOX_SKILL_TEST_PLATFORM="plan9-mips" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
     "$WRAPPER" env check --json 2>&1
   )"
   local status=$?
@@ -164,10 +188,19 @@ test_unsupported_platform_json_error() {
   assert_contains "$output" '"hint"'
 }
 
+test_preserves_complex_arguments() {
+  local tmp
+  make_tmp_dir tmp
+
+  local output
+  output="$(run_with_fake_release "$tmp" message send-group --content 'hello world "quoted" *' '' --json)"
+  assert_contains "$output" '"ok":true'
+  assert_contains "$output" '"args":["message","send-group","--content","hello world \"quoted\" *","","--json"]'
+}
+
 test_skip_checksum_allows_dev_binary() {
   local tmp
-  tmp="$(mktemp -d)"
-  trap 'cleanup_tmp "$tmp"' RETURN
+  make_tmp_dir tmp
 
   local release_root="$tmp/releases"
   local release_dir="$release_root/v0.1.0"
@@ -185,11 +218,14 @@ BIN
     DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
     DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
     DEBOX_SKILL_SKIP_CHECKSUM="1" \
-    "$WRAPPER" env check --json
+    "$WRAPPER" env check --json 2>&1
   )"
 
   assert_contains "$output" '"ok":true'
   assert_contains "$output" 'dev.binary'
+  if [[ "$output" != *'DEBOX_SKILL_SKIP_CHECKSUM=1'* && "$output" != *'unverified'* ]]; then
+    fail "expected skip-checksum warning, got: $output"
+  fi
 }
 
 main() {
@@ -197,6 +233,7 @@ main() {
   test_cache_hit_execs_without_second_download
   test_checksum_mismatch_fails_closed
   test_unsupported_platform_json_error
+  test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary
   echo "PASS: debox wrapper tests"
 }
