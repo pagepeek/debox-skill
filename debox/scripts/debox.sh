@@ -14,6 +14,8 @@ json_escape() {
   value="${value//$'\n'/\\n}"
   value="${value//$'\r'/\\r}"
   value="${value//$'\t'/\\t}"
+  value="${value//$'\b'/\\b}"
+  value="${value//$'\f'/\\f}"
   printf '%s' "$value"
 }
 
@@ -79,13 +81,40 @@ ensure_supported_platform() {
 download_file() {
   local url="$1"
   local destination="$2"
+  local code="$3"
+  local message="$4"
+  local hint="$5"
+  local curl_error
 
   if ! command -v curl >/dev/null 2>&1; then
     fail_bootstrap "MISSING_CURL" "curl is required to download the debox CLI." "Install curl or pre-populate the cache with the matching binary."
   fi
 
-  if ! curl -fsSL "$url" -o "$destination"; then
-    fail_bootstrap "DOWNLOAD_FAILED" "Failed to download $url" "Check DEBOX_SKILL_CLI_BASE_URL, DEBOX_SKILL_CLI_VERSION, and network access."
+  if ! curl_error="$(curl -fsSL "$url" -o "$destination" 2>&1)"; then
+    rm -f "$destination"
+    fail_bootstrap "$code" "$message: $url" "$hint"
+  fi
+}
+
+make_temp_file() {
+  local var_name="$1"
+  local temp_path
+
+  if ! temp_path="$(mktemp "${TMPDIR:-/tmp}/debox-bootstrap.XXXXXX")"; then
+    fail_bootstrap "TEMP_FILE_FAILED" "Failed to create a temporary bootstrap file." "Check that TMPDIR is writable and has available space."
+  fi
+
+  printf -v "$var_name" '%s' "$temp_path"
+}
+
+move_into_cache() {
+  local source="$1"
+  local destination="$2"
+  local code="$3"
+  local message="$4"
+
+  if ! mv "$source" "$destination"; then
+    fail_bootstrap "$code" "$message" "Check that DEBOX_SKILL_CACHE_DIR is writable and has available space."
   fi
 }
 
@@ -129,6 +158,22 @@ verify_checksum() {
   fi
 }
 
+ensure_checksums() {
+  if [[ -f "$checksums_path" ]]; then
+    return 0
+  fi
+
+  make_temp_file tmp_checksums
+  download_file \
+    "$checksums_url" \
+    "$tmp_checksums" \
+    "CHECKSUM_DOWNLOAD_FAILED" \
+    "Failed to download debox CLI checksums" \
+    "Check DEBOX_SKILL_CLI_BASE_URL, DEBOX_SKILL_CLI_VERSION, and release checksums.txt availability."
+  move_into_cache "$tmp_checksums" "$checksums_path" "CHECKSUM_CACHE_WRITE_FAILED" "Failed to cache debox CLI checksums."
+  tmp_checksums=""
+}
+
 version="${DEBOX_SKILL_CLI_VERSION:-$DEFAULT_VERSION}"
 base_url="${DEBOX_SKILL_CLI_BASE_URL:-$DEFAULT_BASE_URL}"
 cache_dir="${DEBOX_SKILL_CACHE_DIR:-$DEFAULT_CACHE_DIR}"
@@ -144,28 +189,52 @@ release_base_url="${base_url%/}/v$version"
 binary_url="$release_base_url/$binary_name"
 checksums_url="$release_base_url/checksums.txt"
 
-mkdir -p "$cache_dir/bin" "$cache_dir/checksums"
+if ! mkdir -p "$cache_dir/bin" "$cache_dir/checksums"; then
+  fail_bootstrap "CACHE_DIR_CREATE_FAILED" "Failed to create debox CLI cache directories." "Check that DEBOX_SKILL_CACHE_DIR is writable."
+fi
+
+tmp_binary=""
+tmp_checksums=""
+cleanup_tmp() {
+  if [[ -n "$tmp_binary" ]]; then
+    rm -f "$tmp_binary"
+  fi
+  if [[ -n "$tmp_checksums" ]]; then
+    rm -f "$tmp_checksums"
+  fi
+}
+trap cleanup_tmp EXIT
 
 if [[ ! -f "$binary_path" ]]; then
-  tmp_binary="$(mktemp "${TMPDIR:-/tmp}/debox-bootstrap.XXXXXX")"
-  cleanup_tmp() {
-    rm -f "$tmp_binary"
-  }
-  trap cleanup_tmp EXIT
+  make_temp_file tmp_binary
+  download_file \
+    "$binary_url" \
+    "$tmp_binary" \
+    "CLI_DOWNLOAD_FAILED" \
+    "Failed to download debox CLI binary" \
+    "Check DEBOX_SKILL_CLI_BASE_URL, DEBOX_SKILL_CLI_VERSION, platform support, and network access."
 
-  download_file "$binary_url" "$tmp_binary"
-  mv "$tmp_binary" "$binary_path"
-  trap - EXIT
-fi
-
-if [[ "$skip_checksum" == "1" ]]; then
-  printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
-else
-  if [[ ! -f "$checksums_path" ]]; then
-    download_file "$checksums_url" "$checksums_path"
+  if [[ "$skip_checksum" == "1" ]]; then
+    printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
+  else
+    ensure_checksums
+    verify_checksum "$tmp_binary" "$checksums_path" "$binary_name"
   fi
-  verify_checksum "$binary_path" "$checksums_path" "$binary_name"
+
+  move_into_cache "$tmp_binary" "$binary_path" "BINARY_CACHE_WRITE_FAILED" "Failed to cache debox CLI binary."
+  tmp_binary=""
+else
+  if [[ "$skip_checksum" == "1" ]]; then
+    printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
+  else
+    ensure_checksums
+    verify_checksum "$binary_path" "$checksums_path" "$binary_name"
+  fi
 fi
 
-chmod +x "$binary_path"
+if ! chmod +x "$binary_path"; then
+  fail_bootstrap "BINARY_CHMOD_FAILED" "Failed to mark cached debox CLI binary executable." "Check permissions for DEBOX_SKILL_CACHE_DIR."
+fi
+
+trap - EXIT
 exec "$binary_path" "$@"

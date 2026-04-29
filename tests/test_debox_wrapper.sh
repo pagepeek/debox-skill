@@ -31,6 +31,19 @@ assert_file_exists() {
   [[ -f "$path" ]] || fail "expected file to exist: $path"
 }
 
+assert_file_not_exists() {
+  local path="$1"
+  [[ ! -f "$path" ]] || fail "expected file not to exist: $path"
+}
+
+assert_starts_with() {
+  local haystack="$1"
+  local needle="$2"
+  if [[ "$haystack" != "$needle"* ]]; then
+    fail "expected output to start with '$needle', got: $haystack"
+  fi
+}
+
 make_tmp_dir() {
   local var_name="$1"
   local created
@@ -165,6 +178,104 @@ BIN
   assert_not_contains "$output" 'should-not-run'
 }
 
+test_checksum_download_failure_does_not_cache_binary() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-cache
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected checksum download failure to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CHECKSUM_DOWNLOAD_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'curl:'
+  assert_not_contains "$output" 'should-not-cache'
+  assert_file_not_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+}
+
+test_checksum_entry_missing_does_not_cache_binary() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-cache-missing-entry
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "0000000000000000000000000000000000000000000000000000000000000000" "debox-0.1.0-linux-amd64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected missing checksum entry to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CHECKSUM_NOT_FOUND'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'should-not-cache-missing-entry'
+  assert_file_not_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+}
+
+test_binary_download_failure_json_is_clean() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  mkdir -p "$release_root/v0.1.0"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected binary download failure to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CLI_DOWNLOAD_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'curl:'
+  assert_file_not_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+}
+
 test_cached_binary_checksum_mismatch_fails_closed() {
   local tmp
   make_tmp_dir tmp
@@ -263,6 +374,9 @@ main() {
   test_downloads_and_execs_cli
   test_cache_hit_execs_without_second_download
   test_checksum_mismatch_fails_closed
+  test_checksum_download_failure_does_not_cache_binary
+  test_checksum_entry_missing_does_not_cache_binary
+  test_binary_download_failure_json_is_clean
   test_cached_binary_checksum_mismatch_fails_closed
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
