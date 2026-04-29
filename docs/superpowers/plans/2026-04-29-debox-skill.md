@@ -110,7 +110,7 @@ Before sending messages, run:
 debox/scripts/debox.sh env check --json
 ```
 
-Do not call DeBox OpenPlatform with raw `curl` unless `scripts/debox.sh` is unavailable and the user explicitly accepts the fallback.
+Do not call DeBox OpenPlatform with raw `curl` unless `debox/scripts/debox.sh` is unavailable and the user explicitly accepts the fallback.
 
 ## Credential Rules
 
@@ -123,7 +123,7 @@ DEBOX_APP_SECRET=
 DEBOX_WEBHOOK_KEY=
 ```
 
-Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. The only exception is `webhook verify --header-api-key`, where the value is a received request header being compared with `DEBOX_WEBHOOK_KEY`.
+Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification should use the CLI's safe input mode once available; avoid placing header values in shell history or logs.
 
 ## Required Output Handling
 
@@ -510,7 +510,7 @@ sha256_file() {
     sha256sum "$path" | awk '{print $1}'
     return 0
   fi
-  fail_bootstrap "SHA256_TOOL_NOT_FOUND" "No SHA-256 tool found." "Install shasum or sha256sum, or set DEBOX_SKILL_SKIP_CHECKSUM=1 for local development only."
+  fail_bootstrap "MISSING_SHA256" "No SHA-256 tool found." "Install shasum or sha256sum, or set DEBOX_SKILL_SKIP_CHECKSUM=1 for local development only."
 }
 
 verify_checksum() {
@@ -1045,7 +1045,9 @@ Create `debox/references/troubleshooting.md` with:
 
 Use this reference when `debox/scripts/debox.sh` fails, DeBox OpenPlatform returns an error, or the user reports missing messages or setup issues.
 
-## Wrapper Bootstrap Errors
+## Common Wrapper Bootstrap Errors
+
+This list is not exhaustive; for unlisted bootstrap failures, inspect the JSON `error.code` and follow `error.hint`.
 
 - `UNSUPPORTED_PLATFORM`: supported platforms are `darwin-arm64`, `darwin-amd64`, `linux-arm64`, and `linux-amd64`.
 - `CLI_DOWNLOAD_FAILED`: check network access or set `DEBOX_SKILL_CLI_BASE_URL`.

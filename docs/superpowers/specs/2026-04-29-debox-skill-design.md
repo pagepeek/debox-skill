@@ -140,7 +140,7 @@ debox.sh user info \
   --json
 
 debox.sh webhook verify \
-  --header-api-key "<value-from-request-header>" \
+  --header-api-key-stdin \
   --json
 ```
 
@@ -175,7 +175,7 @@ Failure output shape:
 
 ## Credentials
 
-The skill and CLI must use environment variables for credentials. The agent must not pass DeBox secrets as CLI arguments unless the command is specifically designed for verifying a received webhook header value.
+The skill and CLI must use environment variables or safe stdin prompts for credentials and received secret-bearing values. The agent must not pass DeBox secrets or webhook header values as CLI arguments.
 
 Credential variables:
 
