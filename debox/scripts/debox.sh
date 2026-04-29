@@ -217,7 +217,10 @@ validate_cli_executable() {
         binary_kind="native"
         return 0
         ;;
-      feedface*|feedfacf*|cafebabe*|cffaedfe*|cefaedfe*|bebafeca*|4d5a*)
+      4d5a*)
+        fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Windows PE binaries are not supported; remove the cached binary so the correct macOS or Linux release binary can be downloaded."
+        ;;
+      feedface*|feedfacf*|cafebabe*|cffaedfe*|cefaedfe*|bebafeca*)
         if [[ "$platform" != darwin-* ]]; then
           fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The cached binary format does not match platform $platform; remove it so the correct release binary can be downloaded."
         fi

@@ -774,6 +774,39 @@ test_padded_corrupt_native_exec_failure_is_json() {
   assert_json_parses "$output"
 }
 
+test_windows_pe_binary_exec_failure_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  printf 'MZnot-a-supported-debox-binary\n' > "$release_dir/debox-0.1.0-darwin-arm64"
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected Windows PE executable to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CLI_EXEC_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'MZnot-a-supported-debox-binary'
+  assert_not_contains "$output" 'command not found'
+  assert_json_parses "$output"
+}
+
 test_native_json_preserves_stdout_stderr_fds() {
   if ! command -v cc >/dev/null 2>&1; then
     echo "SKIP: cc unavailable for native stdout/stderr fd test"
@@ -1022,6 +1055,7 @@ main() {
   test_invalid_executable_exec_failure_is_json
   test_corrupt_native_exec_failure_is_json
   test_padded_corrupt_native_exec_failure_is_json
+  test_windows_pe_binary_exec_failure_is_json
   test_native_json_preserves_stdout_stderr_fds
   test_native_json_exit_127_preserves_stdout_stderr_fds
   test_cli_exit_127_passthrough
