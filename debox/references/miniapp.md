@@ -18,7 +18,7 @@ Use this only as an environment check. Keep a normal browser fallback.
 
 ## Wallet Environment
 
-Inside DeBox, the app may have injected wallet objects such as `window.ethereum` or `window.solana`. Use them for wallet authorization, address access, signatures, and transactions only after explicit user action.
+Inside DeBox, the app may have injected wallet objects such as `window.ethereum` or `window.solana`. Use them for wallet authorization and address access only after explicit user action. Route signing, transfer, and transaction requests to `debox/references/shares-safety.md`.
 
 ## Secret Handling
 
@@ -26,4 +26,4 @@ Do not put `DEBOX_API_KEY`, `DEBOX_APP_SECRET`, or equivalent OpenPlatform crede
 
 ## Agent Guidance
 
-For MiniApp requests, provide an integration checklist and minimal examples. Do not generate transaction-executing code unless the user explicitly asks and confirms the asset-moving behavior.
+For MiniApp requests, provide an integration checklist and minimal examples. V1 MiniApp guidance should only include placeholder, review, or dry-run examples with no signing or submission calls.

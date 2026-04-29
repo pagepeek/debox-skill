@@ -26,7 +26,7 @@ Treat these tasks as high risk. By default, generate templates, explain paramete
 - Review of user-provided code, calldata, or transaction parameters.
 - Placeholder templates that still avoid production addresses, real amounts, and execution calls.
 - Parameter explanation for a user-provided chain, token, amount, recipient, allowance, calldata, or contract.
-- Instructions for the user or developer to execute outside this skill.
+- High-level conceptual next steps or pointers to official docs for execution outside this skill, with no real recipient, amount, calldata, allowance, signing, or broadcast steps.
 
 ## Outside V1 Executable Scope
 
@@ -36,4 +36,4 @@ Treat these tasks as high risk. By default, generate templates, explain paramete
 - Calling Swap.
 - Integrating production Shares contract addresses into deployable code.
 
-When explicit confirmation is needed for review, explanation, placeholder templates, or outside-the-skill instructions, summarize the exact chain, token, amount, recipient, contract, and risk before proceeding.
+When explicit confirmation is needed for review, explanation, placeholder templates, or outside-the-skill conceptual pointers, summarize the exact chain, token, amount, recipient, contract, and risk before proceeding.

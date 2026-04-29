@@ -45,7 +45,7 @@ export function ChatPanel() {
 
 ## Conversation ID
 
-The widget needs a DeBox conversation ID. If obtaining it requires OpenPlatform credentials, put that lookup on a private backend and keep credentials out of frontend code.
+The widget needs a DeBox conversation ID, which refers to the chat group ID used by ChatWidget. Current ChatWidget support is scoped to on-chain token-holding group chats. If obtaining the conversation ID requires OpenPlatform credentials, put that lookup on a private backend and keep credentials out of frontend code.
 
 ## Agent Guidance
 
