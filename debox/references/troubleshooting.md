@@ -32,6 +32,7 @@ This skill does not manage Bot runtime. If the user is using a Bot outside this 
 
 - If Webhook URL is configured, SDK polling may not receive messages.
 - If group full-message monitoring is off, the Bot may only receive messages that mention it.
+- DeBox Go SDK polling with `GetUpdates` or `GetUpdatesChan` can miss messages if polling is delayed. Unread messages are retained only briefly, about 1 minute per DeBox Go SDK docs, so delayed polling may look like missing messages.
 - Webhook callbacks should verify the `X-API-KEY` header against `DEBOX_WEBHOOK_KEY`.
 
 ## Redirect URI Issues
