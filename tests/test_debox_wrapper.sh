@@ -22,6 +22,11 @@ assert_file_exists() {
   [[ -f "$path" ]] || fail "expected file to exist: $path"
 }
 
+cleanup_tmp() {
+  local path="$1"
+  rm -rf "$path"
+}
+
 sha256_file() {
   local path="$1"
   if command -v shasum >/dev/null 2>&1; then
@@ -71,17 +76,21 @@ run_with_fake_release() {
 test_downloads_and_execs_cli() {
   local tmp
   tmp="$(mktemp -d)"
+  trap 'cleanup_tmp "$tmp"' RETURN
+
   local output
   output="$(run_with_fake_release "$tmp" env check --json)"
   assert_contains "$output" '"ok":true'
   assert_contains "$output" '"action":"fake.cli"'
-  assert_contains "$output" '"env"'
+  assert_contains "$output" '"args":["env","check","--json"]'
   assert_file_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
 }
 
 test_cache_hit_execs_without_second_download() {
   local tmp
   tmp="$(mktemp -d)"
+  trap 'cleanup_tmp "$tmp"' RETURN
+
   run_with_fake_release "$tmp" message send-group --json >/dev/null
 
   rm -rf "$tmp/releases"
@@ -96,11 +105,14 @@ test_cache_hit_execs_without_second_download() {
   )"
   assert_contains "$output" '"ok":true'
   assert_contains "$output" '"send-group"'
+  assert_contains "$output" '"args":["message","send-group","--json"]'
 }
 
 test_checksum_mismatch_fails_closed() {
   local tmp
   tmp="$(mktemp -d)"
+  trap 'cleanup_tmp "$tmp"' RETURN
+
   local release_root="$tmp/releases"
   local release_dir="$release_root/v0.1.0"
   mkdir -p "$release_dir"
@@ -126,11 +138,14 @@ BIN
   [[ "$status" -ne 0 ]] || fail "expected checksum mismatch to fail"
   assert_contains "$output" '"ok":false'
   assert_contains "$output" 'CHECKSUM_MISMATCH'
+  assert_contains "$output" '"hint"'
 }
 
 test_unsupported_platform_json_error() {
   local tmp
   tmp="$(mktemp -d)"
+  trap 'cleanup_tmp "$tmp"' RETURN
+
   set +e
   local output
   output="$(
@@ -146,11 +161,14 @@ test_unsupported_platform_json_error() {
   [[ "$status" -ne 0 ]] || fail "expected unsupported platform to fail"
   assert_contains "$output" '"ok":false'
   assert_contains "$output" 'UNSUPPORTED_PLATFORM'
+  assert_contains "$output" '"hint"'
 }
 
 test_skip_checksum_allows_dev_binary() {
   local tmp
   tmp="$(mktemp -d)"
+  trap 'cleanup_tmp "$tmp"' RETURN
+
   local release_root="$tmp/releases"
   local release_dir="$release_root/v0.1.0"
   mkdir -p "$release_dir"
