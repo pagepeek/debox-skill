@@ -57,7 +57,7 @@ Classify the developer request:
 
 ## Required Setup Gate
 
-Before designing or implementing any DeBox webhook channel, first run the copy-paste setup flow in `references/setup-for-developers.md`. Assume the user may know nothing except how to paste DeBox values into chat. The agent must parse pasted values, store them in the target runtime configuration, create safe templates when useful, and avoid echoing values back. Do not proceed to channel architecture or code until setup reaches:
+Before designing or implementing any DeBox webhook channel, first run the copy-paste setup flow in `references/setup-for-developers.md`. Assume the user may know nothing except how to paste DeBox values into chat. Start by sending the setup reference's `First Message To User`, then wait for pasted values. The agent must parse pasted values, store them in the target runtime configuration, create safe templates when useful, and avoid echoing values back. Do not proceed to channel architecture or code until setup reaches:
 
 ```text
 DeBox account registered: yes

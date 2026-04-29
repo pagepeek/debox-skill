@@ -34,6 +34,36 @@ The user may directly provide DeBox secret values to the agent for setup. This i
 
 Do not hard-code real DeBox keys into source code or commit them to git. If the user asks to "upload config", upload code/config templates and set real values through the deployment secret mechanism. For a local prototype, write real values only to an uncommitted local env file such as `.env.local` and ensure it is ignored by git.
 
+## First Message To User
+
+When this setup flow starts, the agent must first send a short guided message like this before asking for code, architecture, or project details:
+
+```text
+我们先把 DeBox 配置拿到。你不用懂 DeBox，也不用配置项目；你只需要打开页面，把看到的字段复制给我，我会负责保存配置。
+
+请按顺序打开：
+
+1. 打开 https://app.debox.pro/
+2. 连接要作为 Bot 的钱包；如果提示注册，先完成注册
+3. 打开说明页 https://docs.debox.pro/zh/APIs/BotGuide/ 放在旁边对照
+4. 打开 https://developer.debox.pro
+5. 用同一个钱包连接
+6. 找 Bot information page
+7. 把页面里能看到的这些字段复制给我，不知道的留空：
+
+API Key:
+Webhook Key:
+App ID:
+App Secret:
+App Domain:
+Webhook URL:
+Monitor group message: on/off/unknown
+
+如果你打开 https://developer.debox.pro/accounts 只看到 Unauthorized 403，那不是 Bot 配置页。回到 https://developer.debox.pro，用同一个钱包登录，再对照 Bot Guide 找 Bot information page。
+```
+
+After sending this message, wait for the user's pasted values. Do not start implementation before receiving enough values to create runtime configuration.
+
 ## Where The User Opens Pages
 
 Before asking for values, tell the user exactly which pages to open:
