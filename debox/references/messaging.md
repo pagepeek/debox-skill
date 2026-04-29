@@ -68,9 +68,11 @@ debox/scripts/debox.sh message send-private \
   --json
 ```
 
+Report the returned `message_id` if present. If the command fails, report `error.hint`.
+
 ## Query Group or User Information
 
-When the CLI supports these commands:
+If the installed CLI exposes these commands, confirm availability with `debox/scripts/debox.sh <command> --help --json` or use them only after `env check` succeeds:
 
 ```bash
 debox/scripts/debox.sh group info --group-id "fxi3hqo5" --json

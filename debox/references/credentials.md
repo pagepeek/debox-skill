@@ -9,11 +9,13 @@ The skill and CLI read credentials from environment variables:
 ```bash
 export DEBOX_API_KEY="..."
 export DEBOX_APP_ID="..."
-export DEBOX_APP_SECRET="..."
+export DEBOX_APP_SECRET="..." # optional; outside v1 normal messaging
 export DEBOX_WEBHOOK_KEY="..."
 ```
 
-`DEBOX_API_KEY` is required for one-shot message sending and most OpenPlatform calls. `DEBOX_APP_ID` identifies the developer app or Bot. `DEBOX_APP_SECRET` is only for sensitive APIs such as payment, transfer, or point-related calls, which are outside this skill's v1 executable scope. `DEBOX_WEBHOOK_KEY` is used to verify DeBox webhook callbacks.
+Set real secrets through a local secret manager, CI secret store, encrypted env loader, or shell-history-safe mechanism. Do not paste real secrets into recorded commands.
+
+`DEBOX_API_KEY` is required for one-shot message sending and most OpenPlatform calls. `DEBOX_APP_ID` identifies the developer app or Bot. `DEBOX_APP_SECRET` is optional for normal messaging and only for sensitive APIs such as payment, transfer, or point-related calls, which are outside this skill's v1 executable scope. `DEBOX_WEBHOOK_KEY` is used to verify DeBox webhook callbacks.
 
 ## Agent Rules
 
