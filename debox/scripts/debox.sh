@@ -163,6 +163,32 @@ move_into_cache() {
   fi
 }
 
+exec_cli() {
+  shopt -s execfail 2>/dev/null || true
+  set +e
+  exec "$binary_path" "$@" 2>/dev/null
+  set -e
+
+  fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
+}
+
+validate_cli_executable() {
+  local first_line interpreter
+
+  if IFS= read -r first_line < "$binary_path" 2>/dev/null; then
+    case "$first_line" in
+      "#!"*)
+        interpreter="${first_line#\#!}"
+        interpreter="${interpreter#"${interpreter%%[![:space:]]*}"}"
+        interpreter="${interpreter%%[[:space:]]*}"
+        if [[ "$interpreter" == /* && ! -x "$interpreter" ]]; then
+          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The binary references a missing interpreter; remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
+        fi
+        ;;
+    esac
+  fi
+}
+
 sha256_file() {
   local path="$1"
   local output
@@ -196,7 +222,7 @@ expected_checksum_for() {
     fail_bootstrap "CHECKSUM_READ_FAILED" "Failed to read checksums file $checksums_path." "Check that the cached checksums file is readable, or remove it so it can be downloaded again."
   fi
 
-  if ! checksum="$(awk -v name="$binary_name" '$2 == name { print $1; exit }' "$checksums_path" 2>/dev/null)"; then
+  if ! checksum="$(awk -v name="$binary_name" '{ file = $2; sub(/^\*/, "", file); if (file == name) { print $1; exit } }' "$checksums_path" 2>/dev/null)"; then
     fail_bootstrap "CHECKSUM_READ_FAILED" "Failed to read checksums file $checksums_path." "Check that the cached checksums file is readable, or remove it so it can be downloaded again."
   fi
   if [[ -z "$checksum" ]]; then
@@ -310,5 +336,7 @@ if ! chmod +x "$binary_path" 2>/dev/null; then
   fail_bootstrap "BINARY_CHMOD_FAILED" "Failed to mark cached debox CLI binary executable." "Check permissions for DEBOX_SKILL_CACHE_DIR."
 fi
 
+validate_cli_executable
+
 trap - EXIT
-exec "$binary_path" "$@"
+exec_cli "$@"

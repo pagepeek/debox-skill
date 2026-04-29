@@ -568,6 +568,42 @@ BIN
   assert_not_contains "$output" 'should-not-run-unreadable-checksums'
 }
 
+test_exec_failure_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/definitely/missing/debox/interpreter
+echo should-not-run-missing-interpreter
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected CLI exec failure to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CLI_EXEC_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'bad interpreter'
+  assert_not_contains "$output" 'should-not-run-missing-interpreter'
+  assert_json_parses "$output"
+}
+
 test_unsupported_platform_json_error() {
   local tmp
   make_tmp_dir tmp
@@ -647,6 +683,7 @@ main() {
   test_cached_binary_checksum_mismatch_fails_closed
   test_cached_binary_sha_failure_is_json
   test_unreadable_checksums_file_is_json
+  test_exec_failure_is_json
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary
