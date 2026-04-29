@@ -58,9 +58,9 @@ for required_file in "${required_files[@]}"; do
   assert_file_exists "$required_file"
 done
 
-assert_contains_literal "debox/SKILL.md" "name: debox-skill"
-if grep -Fqx -- "name: debox skill" "$ROOT_DIR/debox/SKILL.md"; then
-  fail "debox/SKILL.md uses loader-incompatible frontmatter name"
+assert_contains_literal "debox/SKILL.md" "name: debox"
+if grep -Fqx -- "name: debox-skill" "$ROOT_DIR/debox/SKILL.md" || grep -Fqx -- "name: debox skill" "$ROOT_DIR/debox/SKILL.md"; then
+  fail "debox/SKILL.md uses stale frontmatter name"
 fi
 
 assert_executable "debox/scripts/debox.sh"

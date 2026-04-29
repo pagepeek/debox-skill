@@ -57,7 +57,7 @@ Create `debox/SKILL.md` with:
 
 ```markdown
 ---
-name: debox-skill
+name: debox
 description: Use when an agent needs to use DeBox OpenPlatform for safe one-shot community operations such as sending group/private messages, checking DeBox credentials, parsing group IDs, or guiding DeBox Bot registration, MiniApp, ChatWidget, or Shares integration. Prefer the bundled debox/scripts/debox.sh wrapper for executable operations and do not use for long-running Bot runtime management.
 ---
 
@@ -1131,7 +1131,7 @@ Expected: commit succeeds.
 Create `tests/test_skill_content.sh` as a Bash test that:
 
 - Verifies every required skill file exists.
-- Verifies `debox/SKILL.md` contains `name: debox-skill` and not `name: debox skill`.
+- Verifies `debox/SKILL.md` contains `name: debox` and not stale `debox-skill` or spaced skill names.
 - Verifies `debox/scripts/debox.sh` is executable.
 - Scans `debox/SKILL.md`, `debox/scripts/debox.sh`, `debox/references`, and this debox spec/plan for stale placeholders, stale agent-specific names, stale wrapper error names, and unsafe confirmation phrasing.
 - Uses quoted arrays or null-delimited file discovery so paths with spaces do not break scans.

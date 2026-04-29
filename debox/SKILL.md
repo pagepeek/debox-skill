@@ -1,5 +1,5 @@
 ---
-name: debox-skill
+name: debox
 description: Use when an agent needs DeBox OpenPlatform help for safe one-shot community operations such as group/private messages, credential checks, group ID parsing, Bot registration guidance, MiniApp guidance, ChatWidget embedding, or Shares safety review.
 ---
 
