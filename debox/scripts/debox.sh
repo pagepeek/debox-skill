@@ -120,14 +120,26 @@ move_into_cache() {
 
 sha256_file() {
   local path="$1"
+  local output
+  local digest
 
   if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$path" | awk '{print $1}'
+    if ! output="$(shasum -a 256 "$path" 2>/dev/null)"; then
+      fail_bootstrap "SHA256_FAILED" "Failed to calculate SHA-256 for $path." "Check that the cached debox CLI binary is readable, or remove it so it can be downloaded again."
+    fi
   elif command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$path" | awk '{print $1}'
+    if ! output="$(sha256sum "$path" 2>/dev/null)"; then
+      fail_bootstrap "SHA256_FAILED" "Failed to calculate SHA-256 for $path." "Check that the cached debox CLI binary is readable, or remove it so it can be downloaded again."
+    fi
   else
     fail_bootstrap "MISSING_SHA256" "No SHA-256 checksum tool is available." "Install shasum or sha256sum, or set DEBOX_SKILL_SKIP_CHECKSUM=1 for local development only."
   fi
+
+  read -r digest _ <<<"$output"
+  if [[ -z "$digest" ]]; then
+    fail_bootstrap "SHA256_FAILED" "Failed to parse SHA-256 output for $path." "Check that the cached debox CLI binary is readable, or remove it so it can be downloaded again."
+  fi
+  printf '%s' "$digest"
 }
 
 expected_checksum_for() {
@@ -135,7 +147,13 @@ expected_checksum_for() {
   local binary_name="$2"
   local checksum
 
-  checksum="$(awk -v name="$binary_name" '$2 == name { print $1; found = 1; exit } END { if (!found) exit 1 }' "$checksums_path" || true)"
+  if [[ ! -r "$checksums_path" ]]; then
+    fail_bootstrap "CHECKSUM_READ_FAILED" "Failed to read checksums file $checksums_path." "Check that the cached checksums file is readable, or remove it so it can be downloaded again."
+  fi
+
+  if ! checksum="$(awk -v name="$binary_name" '$2 == name { print $1; exit }' "$checksums_path" 2>/dev/null)"; then
+    fail_bootstrap "CHECKSUM_READ_FAILED" "Failed to read checksums file $checksums_path." "Check that the cached checksums file is readable, or remove it so it can be downloaded again."
+  fi
   if [[ -z "$checksum" ]]; then
     fail_bootstrap "CHECKSUM_NOT_FOUND" "No checksum entry found for $binary_name." "Verify the release checksums.txt includes the requested platform binary."
   fi

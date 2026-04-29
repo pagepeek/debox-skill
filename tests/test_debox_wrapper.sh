@@ -307,6 +307,86 @@ BIN
   assert_not_contains "$output" 'should-not-run-cached'
 }
 
+test_cached_binary_sha_failure_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  mkdir -p "$tmp/cache/bin" "$tmp/cache/checksums"
+  cat > "$tmp/cache/bin/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-run-unreadable-binary
+BIN
+  printf '%s  %s\n' "0000000000000000000000000000000000000000000000000000000000000000" "debox-0.1.0-darwin-arm64" > "$tmp/cache/checksums/checksums-0.1.0.txt"
+  chmod 000 "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+
+  if [[ -r "$tmp/cache/bin/debox-0.1.0-darwin-arm64" ]]; then
+    chmod 700 "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+    return 0
+  fi
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+  chmod 700 "$tmp/cache/bin/debox-0.1.0-darwin-arm64" 2>/dev/null || true
+
+  [[ "$status" -ne 0 ]] || fail "expected unreadable cached binary checksum to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'SHA256_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'Permission denied'
+  assert_not_contains "$output" 'should-not-run-unreadable-binary'
+}
+
+test_unreadable_checksums_file_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  mkdir -p "$tmp/cache/bin" "$tmp/cache/checksums"
+  cat > "$tmp/cache/bin/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-run-unreadable-checksums
+BIN
+  chmod +x "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$tmp/cache/bin/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$tmp/cache/checksums/checksums-0.1.0.txt"
+  chmod 000 "$tmp/cache/checksums/checksums-0.1.0.txt"
+
+  if [[ -r "$tmp/cache/checksums/checksums-0.1.0.txt" ]]; then
+    chmod 600 "$tmp/cache/checksums/checksums-0.1.0.txt"
+    return 0
+  fi
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+  chmod 600 "$tmp/cache/checksums/checksums-0.1.0.txt" 2>/dev/null || true
+
+  [[ "$status" -ne 0 ]] || fail "expected unreadable checksums file to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CHECKSUM_READ_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'Permission denied'
+  assert_not_contains "$output" 'CHECKSUM_NOT_FOUND'
+  assert_not_contains "$output" 'should-not-run-unreadable-checksums'
+}
+
 test_unsupported_platform_json_error() {
   local tmp
   make_tmp_dir tmp
@@ -378,6 +458,8 @@ main() {
   test_checksum_entry_missing_does_not_cache_binary
   test_binary_download_failure_json_is_clean
   test_cached_binary_checksum_mismatch_fails_closed
+  test_cached_binary_sha_failure_is_json
+  test_unreadable_checksums_file_is_json
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary
