@@ -164,31 +164,34 @@ move_into_cache() {
 }
 
 exec_cli() {
-  local exec_stderr status stderr_text
+  local exec_output status output_text
 
   if args_include_json && [[ "$binary_kind" == "native" ]]; then
-    make_temp_file exec_stderr
+    # Script and non-JSON paths use direct exec. Native JSON mode cannot both
+    # detect launch failures cleanly and stream separate fds, so it preserves
+    # merged stdout/stderr order and status, then replays the merged output.
+    make_temp_file exec_output
     set +e
-    "$binary_path" "$@" 2>"$exec_stderr"
+    "$binary_path" "$@" >"$exec_output" 2>&1
     status=$?
     set -e
 
     if [[ "$status" -eq 126 || "$status" -eq 127 ]]; then
-      stderr_text="$(cat "$exec_stderr" 2>/dev/null || true)"
-      case "$stderr_text" in
+      output_text="$(cat "$exec_output" 2>/dev/null || true)"
+      case "$output_text" in
         *"$binary_path"*'cannot execute'*|*"$binary_path"*'Exec format'*|*"$binary_path"*'Undefined error'*|*"$binary_path"*'command not found'*)
-          rm -f "$exec_stderr" 2>/dev/null || true
-          exec_stderr=""
+          rm -f "$exec_output" 2>/dev/null || true
+          exec_output=""
           fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
           ;;
       esac
     fi
 
-    if [[ -s "$exec_stderr" ]]; then
-      cat "$exec_stderr" >&2
+    if [[ -s "$exec_output" ]]; then
+      cat "$exec_output"
     fi
-    rm -f "$exec_stderr" 2>/dev/null || true
-    exec_stderr=""
+    rm -f "$exec_output" 2>/dev/null || true
+    exec_output=""
     exit "$status"
   fi
 
@@ -345,7 +348,7 @@ fi
 
 tmp_binary=""
 tmp_checksums=""
-exec_stderr=""
+exec_output=""
 binary_kind=""
 cleanup_tmp() {
   if [[ -n "$tmp_binary" ]]; then
@@ -354,8 +357,8 @@ cleanup_tmp() {
   if [[ -n "$tmp_checksums" ]]; then
     rm -f "$tmp_checksums" 2>/dev/null || true
   fi
-  if [[ -n "$exec_stderr" ]]; then
-    rm -f "$exec_stderr" 2>/dev/null || true
+  if [[ -n "$exec_output" ]]; then
+    rm -f "$exec_output" 2>/dev/null || true
   fi
 }
 trap cleanup_tmp EXIT

@@ -774,6 +774,59 @@ test_padded_corrupt_native_exec_failure_is_json() {
   assert_json_parses "$output"
 }
 
+test_native_stdout_stderr_order_passthrough() {
+  if ! command -v cc >/dev/null 2>&1; then
+    echo "SKIP: cc unavailable for native stdout/stderr ordering test"
+    return 0
+  fi
+
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  local source_path="$tmp/native-order.c"
+  mkdir -p "$release_dir"
+  cat > "$source_path" <<'C'
+#include <stdio.h>
+#include <unistd.h>
+
+int main(void) {
+  printf("out1\n");
+  fflush(stdout);
+  usleep(50000);
+  fprintf(stderr, "err1\n");
+  fflush(stderr);
+  usleep(50000);
+  printf("out2\n");
+  fflush(stdout);
+  usleep(50000);
+  fprintf(stderr, "err2\n");
+  fflush(stderr);
+  return 0;
+}
+C
+
+  if ! cc "$source_path" -o "$release_dir/debox-0.1.0-darwin-arm64" >/dev/null 2>&1; then
+    echo "SKIP: cc failed for native stdout/stderr ordering test"
+    return 0
+  fi
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+
+  [[ "$output" == $'out1\nerr1\nout2\nerr2' ]] || fail "expected native merged output order to be preserved, got: $output"
+}
+
 test_cli_exit_127_passthrough() {
   local tmp
   make_tmp_dir tmp
@@ -927,6 +980,7 @@ main() {
   test_invalid_executable_exec_failure_is_json
   test_corrupt_native_exec_failure_is_json
   test_padded_corrupt_native_exec_failure_is_json
+  test_native_stdout_stderr_order_passthrough
   test_cli_exit_127_passthrough
   test_script_missing_subprocess_127_passthrough
   test_unsupported_platform_json_error
