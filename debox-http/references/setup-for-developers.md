@@ -39,8 +39,6 @@ Do not hard-code real DeBox keys into source code or commit them to git. If the 
 When this setup flow starts, the agent must first send a short guided message like this before asking for code, architecture, or project details:
 
 ```text
-我们先把 DeBox 配置拿到。你不用懂 DeBox，也不用配置项目；你只需要打开页面，把看到的字段复制给我，我会负责保存配置。
-
 请按顺序打开：
 
 1. 打开 https://app.debox.pro/

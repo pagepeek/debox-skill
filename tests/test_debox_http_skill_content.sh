@@ -38,8 +38,10 @@ grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http
 grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/setup-for-developers.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing developer setup URL"
 grep -Fq "Assume the user may know nothing except how to paste DeBox values into chat" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing non-technical user setup rule"
 grep -Fq "## First Message To User" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing first user message template"
-grep -Fq "你不用懂 DeBox，也不用配置项目" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing non-technical user wording"
-grep -Fq "我会负责保存配置" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing agent-owned config wording"
+grep -Fq "请按顺序打开：" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing neutral first prompt"
+if grep -Fq "你不用懂 DeBox，也不用配置项目" "$ROOT_DIR/debox-http/references/setup-for-developers.md"; then
+  fail "first prompt should not include patronizing setup wording"
+fi
 grep -Fq "## Where The User Opens Pages" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing page-opening instructions"
 grep -Fq 'Open `https://app.debox.pro/`' "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing app page instruction"
 grep -Fq "Open the official Bot Guide" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing Bot Guide instruction"
