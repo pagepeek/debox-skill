@@ -7,6 +7,38 @@ description: Use when an agent only has an HTTP request tool and needs DeBox mes
 
 Use this skill for DeBox message workflows implemented with an HTTP request tool only. Do not use shell commands, curl, local scripts, downloaded binaries, SDK execution, or long-running local processes.
 
+## Install This Skill
+
+Install the whole `debox-http` skill directory, not only this entry file, because the detailed HTTP contracts live in `references/`.
+
+For Claude Code, place files under:
+
+```text
+~/.claude/skills/debox-http/
+```
+
+Required files:
+
+```text
+~/.claude/skills/debox-http/SKILL.md
+~/.claude/skills/debox-http/references/auth-http.md
+~/.claude/skills/debox-http/references/channel-integration.md
+~/.claude/skills/debox-http/references/message-http.md
+~/.claude/skills/debox-http/references/webhook-http.md
+```
+
+Canonical source URLs:
+
+```text
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/SKILL.md
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/auth-http.md
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/channel-integration.md
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/message-http.md
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/webhook-http.md
+```
+
+After installation, ask the agent to use `debox-http` and read `references/channel-integration.md` when implementing a DeBox webhook channel.
+
 ## First Action
 
 Classify the request:

@@ -21,6 +21,10 @@ for path in "${required_files[@]}"; do
 done
 
 grep -Fqx -- "name: debox-http" "$ROOT_DIR/debox-http/SKILL.md" || fail "wrong skill name"
+grep -Fq "## Install This Skill" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing install section"
+grep -Fq "~/.claude/skills/debox-http/SKILL.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing Claude Code install path"
+grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/SKILL.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing skill entry URL"
+grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/channel-integration.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing channel integration URL"
 
 if grep -RInE -- 'debox/scripts/debox\.sh|curl|bash|```bash|download|binary|executable|SDKs|local scripts|shell commands' "$ROOT_DIR/debox-http" | grep -Ev "Do not use|without|Do not show|Do not generate"; then
   fail "debox-http should not depend on CLI, binaries, or SDK execution"
