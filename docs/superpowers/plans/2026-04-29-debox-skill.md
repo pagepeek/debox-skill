@@ -1049,12 +1049,24 @@ Use this reference when `debox/scripts/debox.sh` fails, DeBox OpenPlatform retur
 
 This list is not exhaustive; for unlisted bootstrap failures, inspect the JSON `error.code` and follow `error.hint`.
 
-- `UNSUPPORTED_PLATFORM`: supported platforms are `darwin-arm64`, `darwin-amd64`, `linux-arm64`, and `linux-amd64`.
-- `CLI_DOWNLOAD_FAILED`: check network access or set `DEBOX_SKILL_CLI_BASE_URL`.
+- `BINARY_CACHE_PATH_INVALID`: cached CLI path is not a regular file. Remove the path or use another cache directory.
+- `BINARY_CHMOD_FAILED`: the wrapper could not mark the cached CLI executable. Check cache permissions.
+- `BINARY_CACHE_WRITE_FAILED`: the wrapper could not write the downloaded CLI into cache. Check cache permissions and disk space.
+- `CACHE_DIR_CREATE_FAILED`: the wrapper could not create cache directories. Check `DEBOX_SKILL_CACHE_DIR`.
+- `CHECKSUM_CACHE_PATH_INVALID`: cached checksum path is not a regular file. Remove the path or use another cache directory.
+- `CHECKSUM_CACHE_WRITE_FAILED`: the wrapper could not write checksum metadata into cache. Check cache permissions and disk space.
 - `CHECKSUM_DOWNLOAD_FAILED`: release is missing `checksums.txt` or the base URL is wrong.
-- `CHECKSUM_NOT_FOUND`: `checksums.txt` lacks the platform binary entry.
 - `CHECKSUM_MISMATCH`: do not run the binary; verify the release source.
+- `CHECKSUM_NOT_FOUND`: `checksums.txt` lacks the platform binary entry.
+- `CHECKSUM_READ_FAILED`: the wrapper could not read cached checksum metadata. Remove the cached checksum file.
+- `CLI_DOWNLOAD_FAILED`: check network access or set `DEBOX_SKILL_CLI_BASE_URL`.
+- `CLI_EXEC_FAILED`: cached CLI could not start cleanly. Remove the cached binary and retry.
+- `HOME_NOT_SET`: set `DEBOX_SKILL_CACHE_DIR` or run with `HOME` set.
 - `MISSING_CURL`: install `curl` or pre-populate the cache.
+- `MISSING_SHA256`: install `shasum` or `sha256sum`, or use `DEBOX_SKILL_SKIP_CHECKSUM=1` for local development only.
+- `SHA256_FAILED`: checksum calculation failed. Check cache readability or remove the cached binary.
+- `TEMP_FILE_FAILED`: temporary file creation failed. Check `TMPDIR`.
+- `UNSUPPORTED_PLATFORM`: supported platforms are `darwin-arm64`, `darwin-amd64`, `linux-arm64`, and `linux-amd64`.
 
 ## Common DeBox API Errors
 

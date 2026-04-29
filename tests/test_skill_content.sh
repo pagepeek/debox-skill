@@ -67,12 +67,13 @@ assert_executable "debox/scripts/debox.sh"
 
 skill_facing_paths=(
   "$ROOT_DIR/debox/SKILL.md"
+  "$ROOT_DIR/debox/scripts/debox.sh"
   "$ROOT_DIR/debox/references"
   "$ROOT_DIR/docs/superpowers"
 )
 
-assert_not_contains_regex "placeholder TBD" "T[B]D" "${skill_facing_paths[@]}"
-assert_not_contains_regex "placeholder TODO" "T[O]DO" "${skill_facing_paths[@]}"
+assert_not_contains_regex "placeholder TBD" "[Tt][Bb][Dd]" "${skill_facing_paths[@]}"
+assert_not_contains_regex "placeholder TODO" "[Tt][Oo][Dd][Oo]" "${skill_facing_paths[@]}"
 assert_not_contains_regex "stale debox-agent name" "debox[-]agent" "${skill_facing_paths[@]}"
 assert_not_contains_regex "stale DEBOX_AGENT variable" "DEBOX[_]AGENT" "${skill_facing_paths[@]}"
 assert_not_contains_regex "stale curl error code" "CURL[_]NOT[_]FOUND" "${skill_facing_paths[@]}"
@@ -82,9 +83,15 @@ assert_not_contains_regex "unsafe signatures and transactions phrasing" "signatu
 assert_not_contains_regex "unsafe confirmation exception phrasing" "unless explicitly requested" "${skill_facing_paths[@]}"
 
 asset_scope_paths=(
-  "$ROOT_DIR/debox"
+  "$ROOT_DIR/debox/SKILL.md"
+  "$ROOT_DIR/debox/references"
   "$ROOT_DIR/docs/superpowers"
 )
+
+asset_scope_files=()
+while IFS= read -r -d '' asset_scope_file; do
+  asset_scope_files+=("$asset_scope_file")
+done < <(find "${asset_scope_paths[@]}" -type f -print0 | sort -z)
 
 asset_moving_claims="$(
   awk '
@@ -100,22 +107,21 @@ asset_moving_claims="$(
       }
     }
     END { exit bad }
-  ' $(find "${asset_scope_paths[@]}" -type f | sort)
+  ' "${asset_scope_files[@]}"
 )" || fail "docs claim real asset-moving/signing actions can execute after confirmation:
 $asset_moving_claims"
 
 wrapper="$ROOT_DIR/debox/scripts/debox.sh"
 troubleshooting="$ROOT_DIR/debox/references/troubleshooting.md"
-error_codes=(
-  "MISSING_CURL"
-  "MISSING_SHA256"
-  "CHECKSUM_MISMATCH"
-  "CHECKSUM_NOT_FOUND"
-  "CLI_DOWNLOAD_FAILED"
-  "CHECKSUM_DOWNLOAD_FAILED"
-)
 
-for code in "${error_codes[@]}"; do
+wrapper_error_codes=()
+while IFS= read -r code; do
+  wrapper_error_codes+=("$code")
+done < <(sed -nE 's/.*fail_bootstrap "([A-Z0-9_]+)".*/\1/p' "$wrapper" | sort -u)
+
+for code in "${wrapper_error_codes[@]}"; do
   grep -Fq -- "$code" "$wrapper" || fail "wrapper is missing error code: $code"
   grep -Fq -- "$code" "$troubleshooting" || fail "troubleshooting is missing error code: $code"
 done
+
+echo "PASS: debox skill content checks"
