@@ -164,34 +164,6 @@ move_into_cache() {
 }
 
 exec_cli() {
-  local exec_stderr status stderr_text
-
-  if args_include_json; then
-    make_temp_file exec_stderr
-    set +e
-    "$binary_path" "$@" 2>"$exec_stderr"
-    status=$?
-    set -e
-
-    if [[ "$binary_kind" != "script" && ( "$status" -eq 126 || "$status" -eq 127 ) ]]; then
-      stderr_text="$(cat "$exec_stderr" 2>/dev/null || true)"
-      case "$stderr_text" in
-        *"$binary_path"*'command not found'*|*"$binary_path"*'cannot execute'*|*"$binary_path"*'Exec format'*|*"$binary_path"*'Undefined error'*|*"$binary_path"*'bad interpreter'*|*'bad interpreter'*"$binary_path"*)
-          rm -f "$exec_stderr" 2>/dev/null || true
-          exec_stderr=""
-          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
-          ;;
-      esac
-    fi
-
-    if [[ -s "$exec_stderr" ]]; then
-      cat "$exec_stderr" >&2
-    fi
-    rm -f "$exec_stderr" 2>/dev/null || true
-    exec_stderr=""
-    exit "$status"
-  fi
-
   shopt -s execfail 2>/dev/null || true
   set +e
   exec "$binary_path" "$@"
@@ -201,10 +173,29 @@ exec_cli() {
 }
 
 validate_cli_executable() {
-  local first_line interpreter magic
+  local first_line interpreter magic version_byte size_bytes
   binary_kind="unknown"
 
-  if IFS= read -r first_line < "$binary_path" 2>/dev/null; then
+  if command -v od >/dev/null 2>&1; then
+    magic="$(od -An -N7 -tx1 "$binary_path" 2>/dev/null | tr -d '[:space:]')"
+    case "$magic" in
+      7f454c46*)
+        size_bytes="$(wc -c < "$binary_path" 2>/dev/null || printf '0')"
+        version_byte="${magic:12:2}"
+        if [[ "$size_bytes" -lt 64 || "$version_byte" != "01" ]]; then
+          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The cached native binary appears truncated or invalid; remove it so it can be downloaded again."
+        fi
+        binary_kind="native"
+        return 0
+        ;;
+      feedface*|feedfacf*|cafebabe*|cffaedfe*|cefaedfe*|bebafeca*|4d5a*)
+        binary_kind="native"
+        return 0
+        ;;
+    esac
+  fi
+
+  if IFS= read -r -n 256 first_line < "$binary_path" 2>/dev/null; then
     case "$first_line" in
       "#!"*)
         interpreter="${first_line#\#!}"
@@ -214,16 +205,6 @@ validate_cli_executable() {
           fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The binary references a missing interpreter; remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
         fi
         binary_kind="script"
-        return 0
-        ;;
-    esac
-  fi
-
-  if command -v od >/dev/null 2>&1; then
-    magic="$(od -An -N4 -tx1 "$binary_path" 2>/dev/null | tr -d '[:space:]')"
-    case "$magic" in
-      7f454c46|feedface|feedfacf|cafebabe|cffaedfe|cefaedfe|bebafeca|4d5a*)
-        binary_kind="native"
         return 0
         ;;
     esac
@@ -306,6 +287,7 @@ ensure_checksums() {
     "CHECKSUM_DOWNLOAD_FAILED" \
     "Failed to download debox CLI checksums" \
     "Check DEBOX_SKILL_CLI_BASE_URL, DEBOX_SKILL_CLI_VERSION, and release checksums.txt availability."
+  expected_checksum_for "$tmp_checksums" "$binary_name" >/dev/null
   move_into_cache "$tmp_checksums" "$checksums_path" "CHECKSUM_CACHE_WRITE_FAILED" "Failed to cache debox CLI checksums."
   tmp_checksums=""
 }
@@ -335,7 +317,6 @@ fi
 
 tmp_binary=""
 tmp_checksums=""
-exec_stderr=""
 binary_kind=""
 cleanup_tmp() {
   if [[ -n "$tmp_binary" ]]; then
@@ -343,9 +324,6 @@ cleanup_tmp() {
   fi
   if [[ -n "$tmp_checksums" ]]; then
     rm -f "$tmp_checksums" 2>/dev/null || true
-  fi
-  if [[ -n "$exec_stderr" ]]; then
-    rm -f "$exec_stderr" 2>/dev/null || true
   fi
 }
 trap cleanup_tmp EXIT

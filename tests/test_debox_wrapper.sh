@@ -257,6 +257,7 @@ BIN
   assert_contains "$output" '"hint"'
   assert_not_contains "$output" 'should-not-cache-missing-entry'
   assert_file_not_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+  assert_file_not_exists "$tmp/cache/checksums/checksums-0.1.0.txt"
 }
 
 test_binary_download_failure_json_is_clean() {
@@ -633,6 +634,39 @@ BIN
   assert_contains "$output" 'stderr-ok'
 }
 
+test_cli_stdout_stderr_order_passthrough() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo out1
+sleep 0.05
+echo err1 >&2
+sleep 0.05
+echo out2
+sleep 0.05
+echo err2 >&2
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+
+  [[ "$output" == $'out1\nerr1\nout2\nerr2' ]] || fail "expected stdout/stderr order to be preserved, got: $output"
+}
+
 test_invalid_executable_exec_failure_is_json() {
   local tmp
   make_tmp_dir tmp
@@ -853,6 +887,7 @@ main() {
   test_unreadable_checksums_file_is_json
   test_exec_failure_is_json
   test_cli_stderr_passthrough
+  test_cli_stdout_stderr_order_passthrough
   test_invalid_executable_exec_failure_is_json
   test_corrupt_native_exec_failure_is_json
   test_cli_exit_127_passthrough
