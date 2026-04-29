@@ -739,6 +739,39 @@ BIN
   assert_not_contains "$output" 'CLI_EXEC_FAILED'
 }
 
+test_script_missing_subprocess_127_passthrough() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+missing-debox-subprocess-command
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -eq 127 ]] || fail "expected script CLI status 127, got $status with output: $output"
+  assert_contains "$output" 'missing-debox-subprocess-command'
+  assert_contains "$output" 'command not found'
+  assert_not_contains "$output" 'CLI_EXEC_FAILED'
+}
+
 test_unsupported_platform_json_error() {
   local tmp
   make_tmp_dir tmp
@@ -823,6 +856,7 @@ main() {
   test_invalid_executable_exec_failure_is_json
   test_corrupt_native_exec_failure_is_json
   test_cli_exit_127_passthrough
+  test_script_missing_subprocess_127_passthrough
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary

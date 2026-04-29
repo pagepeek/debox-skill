@@ -173,7 +173,7 @@ exec_cli() {
     status=$?
     set -e
 
-    if [[ "$status" -eq 126 || "$status" -eq 127 ]]; then
+    if [[ "$binary_kind" != "script" && ( "$status" -eq 126 || "$status" -eq 127 ) ]]; then
       stderr_text="$(cat "$exec_stderr" 2>/dev/null || true)"
       case "$stderr_text" in
         *"$binary_path"*'command not found'*|*"$binary_path"*'cannot execute'*|*"$binary_path"*'Exec format'*|*"$binary_path"*'Undefined error'*|*"$binary_path"*'bad interpreter'*|*'bad interpreter'*"$binary_path"*)
@@ -202,6 +202,7 @@ exec_cli() {
 
 validate_cli_executable() {
   local first_line interpreter magic
+  binary_kind="unknown"
 
   if IFS= read -r first_line < "$binary_path" 2>/dev/null; then
     case "$first_line" in
@@ -212,6 +213,7 @@ validate_cli_executable() {
         if [[ "$interpreter" == /* && ! -x "$interpreter" ]]; then
           fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The binary references a missing interpreter; remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
         fi
+        binary_kind="script"
         return 0
         ;;
     esac
@@ -221,6 +223,7 @@ validate_cli_executable() {
     magic="$(od -An -N4 -tx1 "$binary_path" 2>/dev/null | tr -d '[:space:]')"
     case "$magic" in
       7f454c46|feedface|feedfacf|cafebabe|cffaedfe|cefaedfe|bebafeca|4d5a*)
+        binary_kind="native"
         return 0
         ;;
     esac
@@ -333,6 +336,7 @@ fi
 tmp_binary=""
 tmp_checksums=""
 exec_stderr=""
+binary_kind=""
 cleanup_tmp() {
   if [[ -n "$tmp_binary" ]]; then
     rm -f "$tmp_binary" 2>/dev/null || true
