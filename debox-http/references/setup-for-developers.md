@@ -34,9 +34,30 @@ The user may directly provide DeBox secret values to the agent for setup. This i
 
 Do not hard-code real DeBox keys into source code or commit them to git. If the user asks to "upload config", upload code/config templates and set real values through the deployment secret mechanism. For a local prototype, write real values only to an uncommitted local env file such as `.env.local` and ensure it is ignored by git.
 
+## Where The User Opens Pages
+
+Before asking for values, tell the user exactly which pages to open:
+
+1. Open `https://app.debox.pro/`.
+2. Connect the wallet that owns or will own the DeBox Bot account.
+3. If DeBox asks for registration, finish registration first.
+4. Open the official Bot Guide in another tab: `https://docs.debox.pro/zh/APIs/BotGuide/`.
+5. Open the developer platform: `https://developer.debox.pro`.
+6. Connect the same wallet in the developer platform.
+7. Look for the Bot information page described by the Bot Guide.
+8. Copy any visible fields named `App ID`, `API Key`, `App Secret`, `App Domain`, `Webhook Url`, `Webhook Key`, and `Monitor group message`.
+
+If the user opened `https://developer.debox.pro/accounts` and sees only `Unauthorized 403`, tell them:
+
+```text
+That page is not the Bot configuration page. Go back to https://developer.debox.pro, connect the same wallet you used on https://app.debox.pro, then use the Bot Guide page to find the Bot information page. If it still only shows 403, your DeBox developer account is not ready yet.
+```
+
+Do not ask the user to understand DeBox terminology. Ask them to copy field labels and values exactly as shown.
+
 ## Copy-Paste Prompt
 
-When setup starts, ask the user to paste whatever they have in this simple format. Tell them to leave unknown fields blank.
+When setup starts, first send the page-opening instructions above, then ask the user to paste whatever they can see in this simple format. Tell them to leave unknown fields blank.
 
 ```text
 Please paste the DeBox values you can see. Leave unknown fields blank.
