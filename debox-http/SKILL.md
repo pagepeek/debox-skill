@@ -57,7 +57,7 @@ Classify the developer request:
 
 ## Required Setup Gate
 
-Before designing or implementing any DeBox webhook channel, first guide the human developer through `references/setup-for-developers.md` and collect a yes/no readiness checklist. Do not proceed to channel architecture or code until the developer confirms:
+Before designing or implementing any DeBox webhook channel, first guide the human developer through `references/setup-for-developers.md` and collect a yes/no readiness checklist. Do not only send the developer to `https://developer.debox.pro`; use the setup reference and official Bot Guide links to explain what fields must exist and what to do if the page is incomplete. Do not proceed to channel architecture or code until the developer confirms:
 
 ```text
 DeBox account registered: yes

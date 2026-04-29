@@ -27,6 +27,7 @@ grep -Fq "not an executable tool skill" "$ROOT_DIR/debox-http/SKILL.md" || fail 
 grep -Fq "developer integration guide" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing integration guide positioning"
 grep -Fq "## Required Setup Gate" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing required setup gate"
 grep -Fq "Do not proceed to channel architecture or code" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing setup-before-development rule"
+grep -Fq "Do not only send the developer to" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing developer page insufficiency rule"
 grep -Fq "## Setup Gate" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing channel integration setup gate"
 grep -Fq "If any item is not ready, do not design code yet" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing channel setup gating rule"
 grep -Fq "## Install This Skill" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing install section"
@@ -37,6 +38,8 @@ grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http
 grep -Fq "API Key obtained and stored server-side" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing API key setup checklist"
 grep -Fq "Webhook Key obtained and stored server-side" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing webhook key setup checklist"
 grep -Fq "https://developer.debox.pro" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing developer platform setup"
+grep -Fq "The developer platform page alone may not provide enough context" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing platform insufficiency warning"
+grep -Fq "Do not invent API keys" "$ROOT_DIR/debox-http/references/setup-for-developers.md" || fail "missing no-invented-credentials rule"
 
 if grep -RInE -- 'debox/scripts/debox\.sh|curl|bash|```bash|download|binary|executable|SDKs|local scripts|shell commands' "$ROOT_DIR/debox-http" | grep -Ev "Do not use|without|Do not show|Do not generate"; then
   fail "debox-http should not depend on CLI, binaries, or SDK execution"

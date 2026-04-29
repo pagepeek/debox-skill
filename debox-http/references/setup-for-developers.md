@@ -10,6 +10,8 @@ https://docs.debox.pro/zh/APIs/BotGuide/
 https://docs.debox.pro/ApiOnePage/
 ```
 
+The developer platform page alone may not provide enough context for a new user. Treat the official Bot Guide as the primary setup source, and use `https://developer.debox.pro` only as the place where the human performs the account-specific actions.
+
 ## Setup Goal
 
 Before implementing a DeBox channel, the developer should have:
@@ -56,7 +58,7 @@ Human steps:
 4. Sign in to verify account ownership.
 5. Confirm the Bot information page is visible.
 
-The Bot information page should expose:
+According to the official Bot Guide, the Bot information page should expose:
 
 ```text
 App ID
@@ -68,6 +70,17 @@ Webhook Url
 Webhook Key
 Monitor group message
 ```
+
+If the page does not expose these fields:
+
+1. Stop the channel development flow.
+2. Ask the human to confirm the wallet is registered on `https://app.debox.pro/`.
+3. Ask the human to confirm they connected the same wallet on `https://developer.debox.pro`.
+4. Ask the human to open the official Bot Guide and compare their page with the documented Bot information page.
+5. Ask the human to complete any missing DeBox account or Bot registration step shown by the platform.
+6. If the platform still does not show `App ID`, `API Key`, `App Domain`, and the `Bot` tab, tell the human that setup is blocked by DeBox platform state and they should contact DeBox support or platform maintainers.
+
+Do not invent API keys, webhook keys, or undocumented page locations. Do not proceed to channel design while the developer platform does not expose the required Bot configuration fields.
 
 ## Step 3: Get The API Key
 
