@@ -276,6 +276,35 @@ test_binary_download_failure_json_is_clean() {
   assert_file_not_exists "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
 }
 
+test_cache_dir_create_failure_json_is_clean() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  touch "$tmp/notadir"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/notadir/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected cache dir creation failure to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CACHE_DIR_CREATE_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'mkdir:'
+}
+
 test_cached_binary_checksum_mismatch_fails_closed() {
   local tmp
   make_tmp_dir tmp
@@ -457,6 +486,7 @@ main() {
   test_checksum_download_failure_does_not_cache_binary
   test_checksum_entry_missing_does_not_cache_binary
   test_binary_download_failure_json_is_clean
+  test_cache_dir_create_failure_json_is_clean
   test_cached_binary_checksum_mismatch_fails_closed
   test_cached_binary_sha_failure_is_json
   test_unreadable_checksums_file_is_json

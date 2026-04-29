@@ -91,7 +91,7 @@ download_file() {
   fi
 
   if ! curl_error="$(curl -fsSL "$url" -o "$destination" 2>&1)"; then
-    rm -f "$destination"
+    rm -f "$destination" 2>/dev/null || true
     fail_bootstrap "$code" "$message: $url" "$hint"
   fi
 }
@@ -100,7 +100,7 @@ make_temp_file() {
   local var_name="$1"
   local temp_path
 
-  if ! temp_path="$(mktemp "${TMPDIR:-/tmp}/debox-bootstrap.XXXXXX")"; then
+  if ! temp_path="$(mktemp "${TMPDIR:-/tmp}/debox-bootstrap.XXXXXX" 2>/dev/null)"; then
     fail_bootstrap "TEMP_FILE_FAILED" "Failed to create a temporary bootstrap file." "Check that TMPDIR is writable and has available space."
   fi
 
@@ -113,7 +113,7 @@ move_into_cache() {
   local code="$3"
   local message="$4"
 
-  if ! mv "$source" "$destination"; then
+  if ! mv "$source" "$destination" 2>/dev/null; then
     fail_bootstrap "$code" "$message" "Check that DEBOX_SKILL_CACHE_DIR is writable and has available space."
   fi
 }
@@ -171,7 +171,7 @@ verify_checksum() {
   actual="$(sha256_file "$binary_path")"
 
   if [[ "$actual" != "$expected" ]]; then
-    rm -f "$binary_path"
+    rm -f "$binary_path" 2>/dev/null || true
     fail_bootstrap "CHECKSUM_MISMATCH" "Checksum mismatch for $binary_name." "Do not run this binary; verify the release source and checksums."
   fi
 }
@@ -207,7 +207,7 @@ release_base_url="${base_url%/}/v$version"
 binary_url="$release_base_url/$binary_name"
 checksums_url="$release_base_url/checksums.txt"
 
-if ! mkdir -p "$cache_dir/bin" "$cache_dir/checksums"; then
+if ! mkdir -p "$cache_dir/bin" "$cache_dir/checksums" 2>/dev/null; then
   fail_bootstrap "CACHE_DIR_CREATE_FAILED" "Failed to create debox CLI cache directories." "Check that DEBOX_SKILL_CACHE_DIR is writable."
 fi
 
@@ -215,10 +215,10 @@ tmp_binary=""
 tmp_checksums=""
 cleanup_tmp() {
   if [[ -n "$tmp_binary" ]]; then
-    rm -f "$tmp_binary"
+    rm -f "$tmp_binary" 2>/dev/null || true
   fi
   if [[ -n "$tmp_checksums" ]]; then
-    rm -f "$tmp_checksums"
+    rm -f "$tmp_checksums" 2>/dev/null || true
   fi
 }
 trap cleanup_tmp EXIT
@@ -250,7 +250,7 @@ else
   fi
 fi
 
-if ! chmod +x "$binary_path"; then
+if ! chmod +x "$binary_path" 2>/dev/null; then
   fail_bootstrap "BINARY_CHMOD_FAILED" "Failed to mark cached debox CLI binary executable." "Check permissions for DEBOX_SKILL_CACHE_DIR."
 fi
 
