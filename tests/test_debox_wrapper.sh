@@ -165,6 +165,37 @@ BIN
   assert_not_contains "$output" 'should-not-run'
 }
 
+test_cached_binary_checksum_mismatch_fails_closed() {
+  local tmp
+  make_tmp_dir tmp
+
+  run_with_fake_release "$tmp" env check --json >/dev/null
+
+  cat > "$tmp/cache/bin/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-run-cached
+BIN
+  chmod +x "$tmp/cache/bin/debox-0.1.0-darwin-arm64"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected cached checksum mismatch to fail"
+  assert_contains "$output" 'CHECKSUM_MISMATCH'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'should-not-run-cached'
+}
+
 test_unsupported_platform_json_error() {
   local tmp
   make_tmp_dir tmp
@@ -232,6 +263,7 @@ main() {
   test_downloads_and_execs_cli
   test_cache_hit_execs_without_second_download
   test_checksum_mismatch_fails_closed
+  test_cached_binary_checksum_mismatch_fails_closed
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary

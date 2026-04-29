@@ -124,6 +124,7 @@ verify_checksum() {
   actual="$(sha256_file "$binary_path")"
 
   if [[ "$actual" != "$expected" ]]; then
+    rm -f "$binary_path"
     fail_bootstrap "CHECKSUM_MISMATCH" "Checksum mismatch for $binary_name." "Do not run this binary; verify the release source and checksums."
   fi
 }
@@ -143,9 +144,9 @@ release_base_url="${base_url%/}/v$version"
 binary_url="$release_base_url/$binary_name"
 checksums_url="$release_base_url/checksums.txt"
 
-if [[ ! -f "$binary_path" ]]; then
-  mkdir -p "$cache_dir/bin" "$cache_dir/checksums"
+mkdir -p "$cache_dir/bin" "$cache_dir/checksums"
 
+if [[ ! -f "$binary_path" ]]; then
   tmp_binary="$(mktemp "${TMPDIR:-/tmp}/debox-bootstrap.XXXXXX")"
   cleanup_tmp() {
     rm -f "$tmp_binary"
@@ -153,16 +154,17 @@ if [[ ! -f "$binary_path" ]]; then
   trap cleanup_tmp EXIT
 
   download_file "$binary_url" "$tmp_binary"
-
-  if [[ "$skip_checksum" == "1" ]]; then
-    printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
-  else
-    download_file "$checksums_url" "$checksums_path"
-    verify_checksum "$tmp_binary" "$checksums_path" "$binary_name"
-  fi
-
   mv "$tmp_binary" "$binary_path"
   trap - EXIT
+fi
+
+if [[ "$skip_checksum" == "1" ]]; then
+  printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
+else
+  if [[ ! -f "$checksums_path" ]]; then
+    download_file "$checksums_url" "$checksums_path"
+  fi
+  verify_checksum "$binary_path" "$checksums_path" "$binary_name"
 fi
 
 chmod +x "$binary_path"
