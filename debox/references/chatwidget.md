@@ -49,4 +49,4 @@ The widget needs a DeBox conversation ID. If obtaining it requires OpenPlatform 
 
 ## Agent Guidance
 
-For ChatWidget requests, help the user choose HTML or React integration, explain where `projectId` and `conversationId` come from, and avoid runtime/Bot design unless explicitly requested.
+For ChatWidget requests, help the user choose HTML or React integration and explain where `projectId` and `conversationId` come from. Avoid runtime/Bot design; for Bot runtime requests, explain that it is outside this skill's executable scope and provide only high-level pointers.
