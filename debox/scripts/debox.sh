@@ -164,6 +164,29 @@ move_into_cache() {
 }
 
 exec_cli() {
+  local exec_stderr status
+
+  if args_include_json; then
+    make_temp_file exec_stderr
+    set +e
+    "$binary_path" "$@" 2>"$exec_stderr"
+    status=$?
+    set -e
+
+    if [[ "$status" -eq 126 || "$status" -eq 127 ]]; then
+      rm -f "$exec_stderr" 2>/dev/null || true
+      exec_stderr=""
+      fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
+    fi
+
+    if [[ -s "$exec_stderr" ]]; then
+      cat "$exec_stderr" >&2
+    fi
+    rm -f "$exec_stderr" 2>/dev/null || true
+    exec_stderr=""
+    exit "$status"
+  fi
+
   shopt -s execfail 2>/dev/null || true
   set +e
   exec "$binary_path" "$@"
@@ -304,12 +327,16 @@ fi
 
 tmp_binary=""
 tmp_checksums=""
+exec_stderr=""
 cleanup_tmp() {
   if [[ -n "$tmp_binary" ]]; then
     rm -f "$tmp_binary" 2>/dev/null || true
   fi
   if [[ -n "$tmp_checksums" ]]; then
     rm -f "$tmp_checksums" 2>/dev/null || true
+  fi
+  if [[ -n "$exec_stderr" ]]; then
+    rm -f "$exec_stderr" 2>/dev/null || true
   fi
 }
 trap cleanup_tmp EXIT

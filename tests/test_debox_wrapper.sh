@@ -668,6 +668,42 @@ test_invalid_executable_exec_failure_is_json() {
   assert_json_parses "$output"
 }
 
+test_corrupt_native_exec_failure_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir"
+  printf '\177ELFnot-a-real-native-binary\n' > "$release_dir/debox-0.1.0-darwin-arm64"
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected corrupt native executable to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CLI_EXEC_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'command not found'
+  assert_not_contains "$output" 'cannot execute'
+  assert_not_contains "$output" 'Exec format'
+  assert_not_contains "$output" 'Undefined error'
+  assert_not_contains "$output" 'line '
+  assert_json_parses "$output"
+}
+
 test_unsupported_platform_json_error() {
   local tmp
   make_tmp_dir tmp
@@ -750,6 +786,7 @@ main() {
   test_exec_failure_is_json
   test_cli_stderr_passthrough
   test_invalid_executable_exec_failure_is_json
+  test_corrupt_native_exec_failure_is_json
   test_unsupported_platform_json_error
   test_preserves_complex_arguments
   test_skip_checksum_allows_dev_binary
