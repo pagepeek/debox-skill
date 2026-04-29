@@ -179,14 +179,12 @@ exec_cli() {
 
     if [[ "$status" -eq 126 || "$status" -eq 127 ]]; then
       stderr_text="$(cat "$exec_stderr" 2>/dev/null || true)"
-      case "$stderr_text" in
-        *"$binary_path"*'cannot execute'*|*"$binary_path"*'Exec format'*|*"$binary_path"*'Undefined error'*|*"$binary_path"*'command not found'*)
-          rm -f "$exec_stdout" "$exec_stderr" 2>/dev/null || true
-          exec_stdout=""
-          exec_stderr=""
-          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
-          ;;
-      esac
+      if [[ -z "$stderr_text" || "$stderr_text" == *"$binary_path"* ]]; then
+        rm -f "$exec_stdout" "$exec_stderr" 2>/dev/null || true
+        exec_stdout=""
+        exec_stderr=""
+        fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
+      fi
     fi
 
     if [[ -s "$exec_stdout" ]]; then
@@ -201,6 +199,7 @@ exec_cli() {
     exit "$status"
   fi
 
+  trap - EXIT
   shopt -s execfail 2>/dev/null || true
   set +e
   exec "$binary_path" "$@"
@@ -409,5 +408,4 @@ fi
 
 validate_cli_executable
 
-trap - EXIT
 exec_cli "$@"
