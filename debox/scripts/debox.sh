@@ -166,7 +166,7 @@ move_into_cache() {
 exec_cli() {
   shopt -s execfail 2>/dev/null || true
   set +e
-  exec "$binary_path" "$@" 2>/dev/null
+  exec "$binary_path" "$@"
   set -e
 
   fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
