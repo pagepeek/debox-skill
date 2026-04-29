@@ -1089,6 +1089,7 @@ This skill does not manage Bot runtime. If the user is using a Bot outside this 
 
 - If Webhook URL is configured, SDK polling may not receive messages.
 - If group full-message monitoring is off, the Bot may only receive messages that mention it.
+- DeBox Go SDK polling with `GetUpdates` or `GetUpdatesChan` can miss messages if polling is delayed. Unread messages are retained only briefly, about 1 minute per DeBox Go SDK docs, so delayed polling may look like missing messages.
 - Webhook callbacks should verify the `X-API-KEY` header against `DEBOX_WEBHOOK_KEY`.
 
 ## Redirect URI Issues
@@ -1127,55 +1128,15 @@ Expected: commit succeeds.
 
 - [ ] **Step 1: Write content consistency tests**
 
-Create `tests/test_skill_content.sh` with:
+Create `tests/test_skill_content.sh` as a Bash test that:
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-fail() {
-  echo "FAIL: $*" >&2
-  exit 1
-}
-
-assert_file() {
-  local path="$1"
-  [[ -f "$path" ]] || fail "missing file: $path"
-}
-
-assert_contains() {
-  local path="$1"
-  local text="$2"
-  grep -Fq "$text" "$path" || fail "expected $path to contain: $text"
-}
-
-assert_not_contains_repo() {
-  local pattern="$1"
-  if rg -n "$pattern" debox docs/superpowers/plans/2026-04-29-debox-skill.md; then
-    fail "unexpected pattern found: $pattern"
-  fi
-}
-
-assert_file "debox/SKILL.md"
-assert_file "debox/scripts/debox.sh"
-assert_file "debox/references/credentials.md"
-assert_file "debox/references/messaging.md"
-assert_file "debox/references/bot-registration.md"
-assert_file "debox/references/miniapp.md"
-assert_file "debox/references/chatwidget.md"
-assert_file "debox/references/shares-safety.md"
-assert_file "debox/references/troubleshooting.md"
-
-assert_contains "debox/SKILL.md" "name: debox-skill"
-assert_contains "debox/SKILL.md" "debox/scripts/debox.sh <command> --json"
-assert_contains "debox/references/credentials.md" "DEBOX_API_KEY"
-assert_contains "debox/references/messaging.md" "message send-group"
-assert_contains "debox/references/shares-safety.md" "Treat these tasks as high risk"
-
-assert_not_contains_repo "T[B]D|T[O]DO|debox[-]agent|DEBOX[_]AGENT"
-
-echo "PASS: debox skill content checks"
-```
+- Verifies every required skill file exists.
+- Verifies `debox/SKILL.md` contains `name: debox-skill` and not `name: debox skill`.
+- Verifies `debox/scripts/debox.sh` is executable.
+- Scans `debox/SKILL.md`, `debox/scripts/debox.sh`, `debox/references`, and this debox spec/plan for stale placeholders, stale agent-specific names, stale wrapper error names, and unsafe confirmation phrasing.
+- Uses quoted arrays or null-delimited file discovery so paths with spaces do not break scans.
+- Checks every wrapper bootstrap error-code literal, including helper-passed codes and `MISSING_*` codes, is covered by `debox/references/troubleshooting.md`.
+- Prints `PASS: debox skill content checks` on success.
 
 - [ ] **Step 2: Make content tests executable**
 

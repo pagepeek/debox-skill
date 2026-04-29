@@ -69,7 +69,8 @@ skill_facing_paths=(
   "$ROOT_DIR/debox/SKILL.md"
   "$ROOT_DIR/debox/scripts/debox.sh"
   "$ROOT_DIR/debox/references"
-  "$ROOT_DIR/docs/superpowers"
+  "$ROOT_DIR/docs/superpowers/specs/2026-04-29-debox-skill-design.md"
+  "$ROOT_DIR/docs/superpowers/plans/2026-04-29-debox-skill.md"
 )
 
 assert_not_contains_regex "placeholder TBD" "[Tt][Bb][Dd]" "${skill_facing_paths[@]}"
@@ -85,7 +86,8 @@ assert_not_contains_regex "unsafe confirmation exception phrasing" "unless expli
 asset_scope_paths=(
   "$ROOT_DIR/debox/SKILL.md"
   "$ROOT_DIR/debox/references"
-  "$ROOT_DIR/docs/superpowers"
+  "$ROOT_DIR/docs/superpowers/specs/2026-04-29-debox-skill-design.md"
+  "$ROOT_DIR/docs/superpowers/plans/2026-04-29-debox-skill.md"
 )
 
 asset_scope_files=()
@@ -117,7 +119,7 @@ troubleshooting="$ROOT_DIR/debox/references/troubleshooting.md"
 wrapper_error_codes=()
 while IFS= read -r code; do
   wrapper_error_codes+=("$code")
-done < <(grep -oE '"[A-Z0-9_]+(_FAILED|_NOT_FOUND|_MISMATCH|_INVALID|_SET|_PLATFORM)"' "$wrapper" | tr -d '"' | sort -u)
+done < <(grep -oE '"[A-Z0-9_]+(_FAILED|_NOT_FOUND|_MISMATCH|_INVALID|_SET|_PLATFORM)|"MISSING_[A-Z0-9_]+"' "$wrapper" | tr -d '"' | grep -v '^DEBOX_' | sort -u)
 
 for code in "${wrapper_error_codes[@]}"; do
   grep -Fq -- "$code" "$troubleshooting" || fail "troubleshooting is missing error code: $code"
