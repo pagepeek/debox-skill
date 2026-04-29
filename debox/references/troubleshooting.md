@@ -9,7 +9,7 @@ Use this reference when `debox/scripts/debox.sh` fails, DeBox OpenPlatform retur
 - `CHECKSUM_DOWNLOAD_FAILED`: release is missing `checksums.txt` or the base URL is wrong.
 - `CHECKSUM_NOT_FOUND`: `checksums.txt` lacks the platform binary entry.
 - `CHECKSUM_MISMATCH`: do not run the binary; verify the release source.
-- `CURL_NOT_FOUND`: install `curl` or pre-populate the cache.
+- `MISSING_CURL`: install `curl` or pre-populate the cache.
 
 ## Common DeBox API Errors
 

@@ -17,7 +17,7 @@ Treat these tasks as high risk. By default, generate templates, explain paramete
 ## Allowed Without Extra Confirmation
 
 - Explain DeBox Shares concepts.
-- Generate a non-executed contract or frontend template.
+- Generate placeholder-only contract or frontend templates with no production addresses, no real amounts, and no transaction submission or signing calls unless explicit confirmation is obtained.
 - Decode or summarize user-provided transaction parameters.
 - Identify which fields need user review.
 
