@@ -837,10 +837,11 @@ test_native_json_exit_127_preserves_stdout_stderr_fds() {
   cat > "$source_path" <<'C'
 #include <stdio.h>
 
-int main(void) {
+int main(int argc, char **argv) {
+  (void)argc;
   printf("native-stdout\n");
   fflush(stdout);
-  fprintf(stderr, "native-stderr\n");
+  fprintf(stderr, "%s: native-stderr\n", argv[0]);
   fflush(stderr);
   return 127;
 }
@@ -865,7 +866,7 @@ C
 
   [[ "$status" -eq 127 ]] || fail "expected native CLI status 127, got $status"
   [[ "$(cat "$stdout_path")" == 'native-stdout' ]] || fail "expected native stdout passthrough, got: $(cat "$stdout_path")"
-  [[ "$(cat "$stderr_path")" == 'native-stderr' ]] || fail "expected native stderr passthrough, got: $(cat "$stderr_path")"
+  [[ "$(cat "$stderr_path")" == "$tmp/cache/bin/debox-0.1.0-darwin-arm64: native-stderr" ]] || fail "expected native stderr passthrough, got: $(cat "$stderr_path")"
 }
 
 test_cli_exit_127_passthrough() {

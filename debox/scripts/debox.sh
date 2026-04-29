@@ -164,28 +164,18 @@ move_into_cache() {
 }
 
 exec_cli() {
-  local exec_stdout exec_stderr status stderr_text
+  local exec_stdout exec_stderr status
 
   if args_include_json && [[ "$binary_kind" == "native" ]]; then
     # Script and non-JSON paths use direct exec. Native JSON mode captures
-    # output so launch failures can be converted to structured bootstrap JSON
-    # without allowing native stderr to corrupt stdout JSON.
+    # output so native stderr cannot corrupt stdout JSON. Executable validation
+    # happens before this point; after launch, preserve CLI status and streams.
     make_temp_file exec_stdout
     make_temp_file exec_stderr
     set +e
     "$binary_path" "$@" >"$exec_stdout" 2>"$exec_stderr"
     status=$?
     set -e
-
-    if [[ "$status" -eq 126 || "$status" -eq 127 ]]; then
-      stderr_text="$(cat "$exec_stderr" 2>/dev/null || true)"
-      if [[ -z "$stderr_text" || "$stderr_text" == *"$binary_path"* ]]; then
-        rm -f "$exec_stdout" "$exec_stderr" 2>/dev/null || true
-        exec_stdout=""
-        exec_stderr=""
-        fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "Remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
-      fi
-    fi
 
     if [[ -s "$exec_stdout" ]]; then
       cat "$exec_stdout"
@@ -216,6 +206,9 @@ validate_cli_executable() {
     magic="$(od -An -N7 -tx1 "$binary_path" 2>/dev/null | tr -d '[:space:]')"
     case "$magic" in
       7f454c46*)
+        if [[ "$platform" != linux-* ]]; then
+          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The cached binary format does not match platform $platform; remove it so the correct release binary can be downloaded."
+        fi
         size_bytes="$(wc -c < "$binary_path" 2>/dev/null || printf '0')"
         version_byte="${magic:12:2}"
         if [[ "$size_bytes" -lt 64 || "$version_byte" != "01" ]]; then
@@ -225,6 +218,9 @@ validate_cli_executable() {
         return 0
         ;;
       feedface*|feedfacf*|cafebabe*|cffaedfe*|cefaedfe*|bebafeca*|4d5a*)
+        if [[ "$platform" != darwin-* ]]; then
+          fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The cached binary format does not match platform $platform; remove it so the correct release binary can be downloaded."
+        fi
         binary_kind="native"
         return 0
         ;;
