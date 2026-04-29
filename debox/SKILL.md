@@ -7,8 +7,6 @@ description: Use when an agent needs DeBox OpenPlatform help for safe one-shot c
 
 Use this skill to help an agent use DeBox as a community action surface without hand-writing DeBox API requests.
 
-Implementation note: this skeleton becomes complete only after `debox/scripts/debox.sh` and the referenced files exist.
-
 ## Scope
 
 This skill supports:
@@ -35,6 +33,7 @@ Classify the user's request:
 - **Credentials or setup**: read `references/credentials.md`.
 - **Group/private messaging**: read `references/messaging.md`.
 - **Bot registration**: read `references/bot-registration.md`.
+- **Webhook verification**: pipe the received header value to `debox/scripts/debox.sh webhook verify --header-api-key-stdin --json`; never pass header values as CLI arguments.
 - **MiniApp or wallet-in-browser integration**: read `references/miniapp.md`.
 - **ChatWidget embedding**: read `references/chatwidget.md`.
 - **Shares, signing, transfer, Swap, or chain buttons**: read `references/shares-safety.md`.
@@ -67,7 +66,7 @@ DEBOX_APP_SECRET=
 DEBOX_WEBHOOK_KEY=
 ```
 
-Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification should use the CLI's safe input mode once available; avoid placing header values in shell history or logs.
+Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification must use `webhook verify --header-api-key-stdin --json`; avoid placing header values in shell history or logs.
 
 ## Required Output Handling
 

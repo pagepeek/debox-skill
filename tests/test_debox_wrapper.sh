@@ -774,9 +774,9 @@ test_padded_corrupt_native_exec_failure_is_json() {
   assert_json_parses "$output"
 }
 
-test_native_stdout_stderr_order_passthrough() {
+test_native_json_preserves_stdout_stderr_fds() {
   if ! command -v cc >/dev/null 2>&1; then
-    echo "SKIP: cc unavailable for native stdout/stderr ordering test"
+    echo "SKIP: cc unavailable for native stdout/stderr fd test"
     return 0
   fi
 
@@ -785,46 +785,87 @@ test_native_stdout_stderr_order_passthrough() {
 
   local release_root="$tmp/releases"
   local release_dir="$release_root/v0.1.0"
-  local source_path="$tmp/native-order.c"
+  local source_path="$tmp/native-fds.c"
+  local stdout_path="$tmp/stdout.txt"
+  local stderr_path="$tmp/stderr.txt"
   mkdir -p "$release_dir"
   cat > "$source_path" <<'C'
 #include <stdio.h>
-#include <unistd.h>
 
 int main(void) {
-  printf("out1\n");
+  printf("{\"ok\":true}\n");
   fflush(stdout);
-  usleep(50000);
-  fprintf(stderr, "err1\n");
-  fflush(stderr);
-  usleep(50000);
-  printf("out2\n");
-  fflush(stdout);
-  usleep(50000);
-  fprintf(stderr, "err2\n");
+  fprintf(stderr, "native-warning\n");
   fflush(stderr);
   return 0;
 }
 C
 
   if ! cc "$source_path" -o "$release_dir/debox-0.1.0-darwin-arm64" >/dev/null 2>&1; then
-    echo "SKIP: cc failed for native stdout/stderr ordering test"
+    echo "SKIP: cc failed for native stdout/stderr fd test"
     return 0
   fi
   chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
   printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
 
-  local output
-  output="$(
-    DEBOX_SKILL_CLI_VERSION="0.1.0" \
-    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
-    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
-    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
-    DEBOX_SKILL_SKIP_CHECKSUM="0" \
-    "$WRAPPER" env check --json 2>&1
-  )"
+  DEBOX_SKILL_CLI_VERSION="0.1.0" \
+  DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+  DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+  DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+  DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json >"$stdout_path" 2>"$stderr_path"
 
-  [[ "$output" == $'out1\nerr1\nout2\nerr2' ]] || fail "expected native merged output order to be preserved, got: $output"
+  [[ "$(cat "$stdout_path")" == '{"ok":true}' ]] || fail "expected native JSON stdout to remain clean, got: $(cat "$stdout_path")"
+  [[ "$(cat "$stderr_path")" == 'native-warning' ]] || fail "expected native stderr to stay on stderr, got: $(cat "$stderr_path")"
+}
+
+test_native_json_exit_127_preserves_stdout_stderr_fds() {
+  if ! command -v cc >/dev/null 2>&1; then
+    echo "SKIP: cc unavailable for native exit 127 fd test"
+    return 0
+  fi
+
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  local source_path="$tmp/native-exit-127.c"
+  local stdout_path="$tmp/stdout.txt"
+  local stderr_path="$tmp/stderr.txt"
+  mkdir -p "$release_dir"
+  cat > "$source_path" <<'C'
+#include <stdio.h>
+
+int main(void) {
+  printf("native-stdout\n");
+  fflush(stdout);
+  fprintf(stderr, "native-stderr\n");
+  fflush(stderr);
+  return 127;
+}
+C
+
+  if ! cc "$source_path" -o "$release_dir/debox-0.1.0-darwin-arm64" >/dev/null 2>&1; then
+    echo "SKIP: cc failed for native exit 127 fd test"
+    return 0
+  fi
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  DEBOX_SKILL_CLI_VERSION="0.1.0" \
+  DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+  DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+  DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+  DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json >"$stdout_path" 2>"$stderr_path"
+  local status=$?
+  set -e
+
+  [[ "$status" -eq 127 ]] || fail "expected native CLI status 127, got $status"
+  [[ "$(cat "$stdout_path")" == 'native-stdout' ]] || fail "expected native stdout passthrough, got: $(cat "$stdout_path")"
+  [[ "$(cat "$stderr_path")" == 'native-stderr' ]] || fail "expected native stderr passthrough, got: $(cat "$stderr_path")"
 }
 
 test_cli_exit_127_passthrough() {
@@ -980,7 +1021,8 @@ main() {
   test_invalid_executable_exec_failure_is_json
   test_corrupt_native_exec_failure_is_json
   test_padded_corrupt_native_exec_failure_is_json
-  test_native_stdout_stderr_order_passthrough
+  test_native_json_preserves_stdout_stderr_fds
+  test_native_json_exit_127_preserves_stdout_stderr_fds
   test_cli_exit_127_passthrough
   test_script_missing_subprocess_127_passthrough
   test_unsupported_platform_json_error

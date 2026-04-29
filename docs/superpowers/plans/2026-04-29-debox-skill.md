@@ -40,7 +40,7 @@ No compiled DeBox CLI source is implemented in this plan. The CLI is an external
 - Create: `debox/scripts/.gitkeep`
 - Create: `debox/references/.gitkeep`
 
-- [ ] **Step 1: Create the skill directories**
+- [x] **Step 1: Create the skill directories**
 
 Run:
 
@@ -51,7 +51,7 @@ touch debox/scripts/.gitkeep debox/references/.gitkeep
 
 Expected: command exits `0`.
 
-- [ ] **Step 2: Write the initial `SKILL.md`**
+- [x] **Step 2: Write the initial `SKILL.md`**
 
 Create `debox/SKILL.md` with:
 
@@ -123,7 +123,7 @@ DEBOX_APP_SECRET=
 DEBOX_WEBHOOK_KEY=
 ```
 
-Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification should use the CLI's safe input mode once available; avoid placing header values in shell history or logs.
+Never ask for wallet private keys, mnemonics, or seed phrases. Never place DeBox secrets in command-line arguments, code snippets, logs, or frontend code. Webhook verification must use `webhook verify --header-api-key-stdin --json`; avoid placing header values in shell history or logs.
 
 ## Required Output Handling
 
@@ -135,7 +135,7 @@ For agent-initiated commands, include `--json` and trust the exit code:
 Report success with the DeBox target and returned identifier. Report failure with the CLI's structured hint.
 ```
 
-- [ ] **Step 3: Verify the skeleton files exist**
+- [x] **Step 3: Verify the skeleton files exist**
 
 Run:
 
@@ -151,7 +151,7 @@ debox/references/.gitkeep
 debox/scripts/.gitkeep
 ```
 
-- [ ] **Step 4: Commit the skeleton**
+- [x] **Step 4: Commit the skeleton**
 
 Run:
 
@@ -170,7 +170,7 @@ Expected: commit succeeds.
 - Create: `tests/test_debox_wrapper.sh`
 - Test: `tests/test_debox_wrapper.sh`
 
-- [ ] **Step 1: Write failing wrapper tests**
+- [x] **Step 1: Write failing wrapper tests**
 
 Create `tests/test_debox_wrapper.sh` with:
 
@@ -363,7 +363,7 @@ main() {
 main "$@"
 ```
 
-- [ ] **Step 2: Make the tests executable**
+- [x] **Step 2: Make the tests executable**
 
 Run:
 
@@ -373,7 +373,7 @@ chmod +x tests/test_debox_wrapper.sh
 
 Expected: command exits `0`.
 
-- [ ] **Step 3: Run tests and verify they fail because the wrapper is not implemented**
+- [x] **Step 3: Run tests and verify they fail because the wrapper is not implemented**
 
 Run:
 
@@ -383,7 +383,7 @@ tests/test_debox_wrapper.sh
 
 Expected: FAIL with a message indicating `debox/scripts/debox.sh` does not exist or is not executable.
 
-- [ ] **Step 4: Commit the failing tests**
+- [x] **Step 4: Commit the failing tests**
 
 Run:
 
@@ -403,7 +403,7 @@ Expected: commit succeeds.
 - Delete: `debox/scripts/.gitkeep`
 - Test: `tests/test_debox_wrapper.sh`
 
-- [ ] **Step 1: Write the wrapper implementation**
+- [x] **Step 1: Write the wrapper implementation**
 
 Create `debox/scripts/debox.sh` with:
 
@@ -584,7 +584,7 @@ ORIGINAL_ARGS=("$@")
 main "$@"
 ```
 
-- [ ] **Step 2: Remove the placeholder and make the wrapper executable**
+- [x] **Step 2: Remove the placeholder and make the wrapper executable**
 
 Run:
 
@@ -595,7 +595,7 @@ chmod +x debox/scripts/debox.sh
 
 Expected: command exits `0`.
 
-- [ ] **Step 3: Run wrapper tests**
+- [x] **Step 3: Run wrapper tests**
 
 Run:
 
@@ -609,7 +609,7 @@ Expected output:
 PASS: debox wrapper tests
 ```
 
-- [ ] **Step 4: If `fail_bootstrap` errors because `ORIGINAL_ARGS` is unbound, patch the wrapper**
+- [x] **Step 4: If `fail_bootstrap` errors because `ORIGINAL_ARGS` is unbound, patch the wrapper**
 
 Replace the top of `fail_bootstrap` in `debox/scripts/debox.sh` with this implementation:
 
@@ -651,7 +651,7 @@ Expected output:
 PASS: debox wrapper tests
 ```
 
-- [ ] **Step 5: Commit the wrapper**
+- [x] **Step 5: Commit the wrapper**
 
 Run:
 
@@ -673,7 +673,7 @@ Expected: commit succeeds.
 - Create: `debox/references/messaging.md`
 - Delete: `debox/references/.gitkeep`
 
-- [ ] **Step 1: Write credential reference**
+- [x] **Step 1: Write credential reference**
 
 Create `debox/references/credentials.md` with:
 
@@ -723,7 +723,7 @@ The user obtains DeBox OpenPlatform values from the DeBox developer portal after
 - Webhook Key: generated after webhook configuration and sent by DeBox in the `X-API-KEY` callback header.
 ```
 
-- [ ] **Step 2: Write messaging reference**
+- [x] **Step 2: Write messaging reference**
 
 Create `debox/references/messaging.md` with:
 
@@ -816,7 +816,7 @@ Use `--type text` for plain notifications. Use richer message types only when th
 Do not include DeBox credentials in message content.
 ```
 
-- [ ] **Step 3: Remove reference placeholder**
+- [x] **Step 3: Remove reference placeholder**
 
 Run:
 
@@ -826,7 +826,7 @@ rm -f debox/references/.gitkeep
 
 Expected: command exits `0`.
 
-- [ ] **Step 4: Verify references contain no placeholders**
+- [x] **Step 4: Verify references contain no placeholders**
 
 Run:
 
@@ -836,7 +836,7 @@ rg -n "T[B]D|T[O]DO|debox[-]agent|DEBOX[_]AGENT" debox/references/credentials.md
 
 Expected: no output and exit code `1`.
 
-- [ ] **Step 5: Commit credential and messaging references**
+- [x] **Step 5: Commit credential and messaging references**
 
 Run:
 
@@ -859,7 +859,7 @@ Expected: commit succeeds.
 - Create: `debox/references/shares-safety.md`
 - Create: `debox/references/troubleshooting.md`
 
-- [ ] **Step 1: Write Bot registration reference**
+- [x] **Step 1: Write Bot registration reference**
 
 Create `debox/references/bot-registration.md` with:
 
@@ -895,7 +895,7 @@ The user must register and authorize the Bot with their own DeBox wallet account
 If the user only needs to send a group notification or private message, prefer `debox/scripts/debox.sh` one-shot commands. Do not introduce runtime, polling, or webhook server design for simple sending tasks.
 ```
 
-- [ ] **Step 2: Write MiniApp reference**
+- [x] **Step 2: Write MiniApp reference**
 
 Create `debox/references/miniapp.md` with:
 
@@ -931,7 +931,7 @@ Do not put `DEBOX_API_KEY`, `DEBOX_APP_SECRET`, or equivalent OpenPlatform crede
 For MiniApp requests, provide an integration checklist and minimal examples. For transaction-related requests, provide only placeholder, review, or dry-run examples with no signing or submission calls.
 ```
 
-- [ ] **Step 3: Write ChatWidget reference**
+- [x] **Step 3: Write ChatWidget reference**
 
 Create `debox/references/chatwidget.md` with:
 
@@ -990,7 +990,7 @@ The widget needs a DeBox conversation ID, which refers to the chat group ID used
 For ChatWidget requests, help the user choose HTML or React integration and explain where `projectId` and `conversationId` come from. Avoid runtime/Bot design; for Bot runtime requests, explain that it is outside this skill's executable scope and provide only high-level pointers.
 ```
 
-- [ ] **Step 4: Write Shares safety reference**
+- [x] **Step 4: Write Shares safety reference**
 
 Create `debox/references/shares-safety.md` with:
 
@@ -1036,7 +1036,7 @@ Treat these tasks as high risk. By default, generate templates, explain paramete
 When explicit confirmation is needed for review, explanation, placeholder templates, or outside-the-skill conceptual pointers, summarize the exact chain, token, amount, recipient, contract, and risk before proceeding.
 ```
 
-- [ ] **Step 5: Write troubleshooting reference**
+- [x] **Step 5: Write troubleshooting reference**
 
 Create `debox/references/troubleshooting.md` with:
 
@@ -1097,7 +1097,7 @@ This skill does not manage Bot runtime. If the user is using a Bot outside this 
 For DeBox authorization flows, use HTTPS redirect URIs and encode special characters with `encodeURIComponent` when building URLs.
 ```
 
-- [ ] **Step 6: Scan all references**
+- [x] **Step 6: Scan all references**
 
 Run:
 
@@ -1107,7 +1107,7 @@ rg -n "T[B]D|T[O]DO|debox[-]agent|DEBOX[_]AGENT|private key.*provide|mnemonic.*p
 
 Expected: no output and exit code `1`.
 
-- [ ] **Step 7: Commit integration and safety references**
+- [x] **Step 7: Commit integration and safety references**
 
 Run:
 
@@ -1126,7 +1126,7 @@ Expected: commit succeeds.
 - Create: `tests/test_skill_content.sh`
 - Test: `tests/test_skill_content.sh`
 
-- [ ] **Step 1: Write content consistency tests**
+- [x] **Step 1: Write content consistency tests**
 
 Create `tests/test_skill_content.sh` as a Bash test that:
 
@@ -1138,7 +1138,7 @@ Create `tests/test_skill_content.sh` as a Bash test that:
 - Checks every wrapper bootstrap error-code literal, including helper-passed codes and `MISSING_*` codes, is covered by `debox/references/troubleshooting.md`.
 - Prints `PASS: debox skill content checks` on success.
 
-- [ ] **Step 2: Make content tests executable**
+- [x] **Step 2: Make content tests executable**
 
 Run:
 
@@ -1148,7 +1148,7 @@ chmod +x tests/test_skill_content.sh
 
 Expected: command exits `0`.
 
-- [ ] **Step 3: Run content tests**
+- [x] **Step 3: Run content tests**
 
 Run:
 
@@ -1162,7 +1162,7 @@ Expected output:
 PASS: debox skill content checks
 ```
 
-- [ ] **Step 4: Run wrapper tests again**
+- [x] **Step 4: Run wrapper tests again**
 
 Run:
 
@@ -1176,7 +1176,7 @@ Expected output:
 PASS: debox wrapper tests
 ```
 
-- [ ] **Step 5: Commit content checks**
+- [x] **Step 5: Commit content checks**
 
 Run:
 
@@ -1194,7 +1194,7 @@ Expected: commit succeeds.
 **Files:**
 - Modify: `docs/superpowers/plans/2026-04-29-debox-skill.md`
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 Run:
 
@@ -1213,7 +1213,7 @@ PASS: debox skill content checks
 
 Expected `git status --short`: only this plan file may be modified if task checkboxes were updated.
 
-- [ ] **Step 2: Review skill routing for scope drift**
+- [x] **Step 2: Review skill routing for scope drift**
 
 Run:
 
@@ -1223,7 +1223,7 @@ rg -n "runtime|polling|webhook server|transfer|Swap|signing|Shares" debox/SKILL.
 
 Expected: matches are only in scope boundaries, safety rules, or troubleshooting notes. There should be no instruction to implement Bot runtime or execute asset-moving actions.
 
-- [ ] **Step 3: Review wrapper for secret leakage**
+- [x] **Step 3: Review wrapper for secret leakage**
 
 Run:
 
@@ -1233,7 +1233,7 @@ rg -n "DEBOX_API_KEY|DEBOX_APP_SECRET|DEBOX_WEBHOOK_KEY|echo|printf" debox/scrip
 
 Expected: references explain environment variables, and wrapper output does not print credential values.
 
-- [ ] **Step 4: Commit final plan checkbox updates if any**
+- [x] **Step 4: Commit final plan checkbox updates if any**
 
 If this plan file was updated during execution, run:
 
