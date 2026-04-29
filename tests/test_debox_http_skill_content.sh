@@ -11,6 +11,7 @@ fail() {
 required_files=(
   "debox-http/SKILL.md"
   "debox-http/references/auth-http.md"
+  "debox-http/references/channel-integration.md"
   "debox-http/references/message-http.md"
   "debox-http/references/webhook-http.md"
 )
@@ -27,6 +28,10 @@ fi
 
 grep -Fq "bot/getUpdates" "$ROOT_DIR/debox-http/references/message-http.md" || fail "missing receive messages endpoint"
 grep -Fq "bot/sendMessage" "$ROOT_DIR/debox-http/references/message-http.md" || fail "missing bot send endpoint"
+grep -Fq "ingest_webhook(http_request)" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing channel webhook contract"
+grep -Fq "send(channel_message)" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing channel send contract"
+grep -Fq "provider_update_id" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing channel update mapping"
+grep -Fq "Webhook URL" "$ROOT_DIR/debox-http/references/channel-integration.md" || fail "missing webhook channel setup"
 grep -Fq "messages/group/send" "$ROOT_DIR/debox-http/references/message-http.md" || fail "missing OpenPlatform group send endpoint"
 grep -Fq "signature = lowercase_hex_sha1" "$ROOT_DIR/debox-http/references/auth-http.md" || fail "missing signature rule"
 grep -Fq "X-API-KEY" "$ROOT_DIR/debox-http/references/webhook-http.md" || fail "missing webhook header verification"

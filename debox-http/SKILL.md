@@ -13,6 +13,7 @@ Classify the request:
 
 - **Receive messages / poll bot updates**: read `references/message-http.md` section `Receive Messages`.
 - **Send a bot reply to a chat/user/group**: read `references/message-http.md` section `Bot Send Message`.
+- **Integrate DeBox as an agent channel**: read `references/channel-integration.md`.
 - **Send OpenPlatform group push message**: read `references/message-http.md` section `OpenPlatform Group Send`.
 - **Webhook callback handling**: read `references/webhook-http.md`.
 - **Credentials or signing**: read `references/auth-http.md`.
