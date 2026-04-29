@@ -45,9 +45,12 @@ copy_local_skill() {
 
 install_skill() {
   local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  script_dir=""
+  if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  fi
 
-  if [[ -f "$script_dir/debox/SKILL.md" ]]; then
+  if [[ -n "$script_dir" && -f "$script_dir/debox/SKILL.md" ]]; then
     copy_local_skill "$script_dir/debox"
     echo "Installed debox skill to $INSTALL_DIR"
     return 0
