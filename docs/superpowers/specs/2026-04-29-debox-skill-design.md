@@ -38,7 +38,7 @@ debox-skill/
             └── 2026-04-29-debox-skill-design.md
 ```
 
-The skill directory is named `debox`. The human-facing skill name is `debox skill`. No command, directory, or binary is named `debox-agent`.
+The skill directory is named `debox`. The loader-compatible skill name is `debox-skill`. No command, directory, or binary uses a separate agent-specific name.
 
 ## Core Design
 

@@ -12,6 +12,7 @@ This list is not exhaustive; for unlisted bootstrap failures, inspect the JSON `
 - `CHECKSUM_NOT_FOUND`: `checksums.txt` lacks the platform binary entry.
 - `CHECKSUM_MISMATCH`: do not run the binary; verify the release source.
 - `MISSING_CURL`: install `curl` or pre-populate the cache.
+- `MISSING_SHA256`: install `shasum` or `sha256sum`, or use `DEBOX_SKILL_SKIP_CHECKSUM=1` for local development only.
 
 ## Common DeBox API Errors
 
