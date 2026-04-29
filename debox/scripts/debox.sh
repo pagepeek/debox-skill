@@ -173,7 +173,7 @@ exec_cli() {
 }
 
 validate_cli_executable() {
-  local first_line interpreter
+  local first_line interpreter magic
 
   if IFS= read -r first_line < "$binary_path" 2>/dev/null; then
     case "$first_line" in
@@ -184,9 +184,21 @@ validate_cli_executable() {
         if [[ "$interpreter" == /* && ! -x "$interpreter" ]]; then
           fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The binary references a missing interpreter; remove the cached binary so it can be downloaded again, or verify the release binary is compatible with this system."
         fi
+        return 0
         ;;
     esac
   fi
+
+  if command -v od >/dev/null 2>&1; then
+    magic="$(od -An -N4 -tx1 "$binary_path" 2>/dev/null | tr -d '[:space:]')"
+    case "$magic" in
+      7f454c46|feedface|feedfacf|cafebabe|cffaedfe|cefaedfe|bebafeca|4d5a*)
+        return 0
+        ;;
+    esac
+  fi
+
+  fail_bootstrap "CLI_EXEC_FAILED" "Failed to execute cached debox CLI binary: $binary_path." "The cached file is not a recognized executable script or native binary; remove it so it can be downloaded again."
 }
 
 sha256_file() {
