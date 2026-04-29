@@ -4,6 +4,8 @@ Use this reference when `debox/scripts/debox.sh` fails, DeBox OpenPlatform retur
 
 ## Common Wrapper Bootstrap Errors
 
+This list is not exhaustive; for unlisted bootstrap failures, inspect the JSON `error.code` and follow `error.hint`.
+
 - `UNSUPPORTED_PLATFORM`: supported platforms are `darwin-arm64`, `darwin-amd64`, `linux-arm64`, and `linux-amd64`.
 - `CLI_DOWNLOAD_FAILED`: check network access or set `DEBOX_SKILL_CLI_BASE_URL`.
 - `CHECKSUM_DOWNLOAD_FAILED`: release is missing `checksums.txt` or the base URL is wrong.
