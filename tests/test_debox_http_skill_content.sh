@@ -21,6 +21,9 @@ for path in "${required_files[@]}"; do
 done
 
 grep -Fqx -- "name: debox-http" "$ROOT_DIR/debox-http/SKILL.md" || fail "wrong skill name"
+grep -Fq "DeBox developer" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing developer-oriented positioning"
+grep -Fq "not an executable tool skill" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing non-executable skill positioning"
+grep -Fq "developer integration guide" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing integration guide positioning"
 grep -Fq "## Install This Skill" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing install section"
 grep -Fq "~/.claude/skills/debox-http/SKILL.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing Claude Code install path"
 grep -Fq "https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/SKILL.md" "$ROOT_DIR/debox-http/SKILL.md" || fail "missing skill entry URL"

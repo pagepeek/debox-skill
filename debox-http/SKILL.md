@@ -1,11 +1,13 @@
 ---
 name: debox-http
-description: Use when an agent only has an HTTP request tool and needs DeBox message receive/send workflows without shell, CLI binaries, SDK execution, or local scripts.
+description: Use when a DeBox developer is designing or implementing HTTP-based DeBox messaging, webhook, bot, or agent channel integrations.
 ---
 
 # debox-http
 
-Use this skill for DeBox message workflows implemented with an HTTP request tool only. Do not use shell commands, curl, local scripts, downloaded binaries, SDK execution, or long-running local processes.
+Use this skill as a developer integration guide for DeBox HTTP messaging, webhook callbacks, bot send/receive flows, and agent channel adapters.
+
+This is not an executable tool skill and it does not provide a runtime. Do not use shell commands, curl, local scripts, downloaded binaries, SDK execution, or long-running local processes as part of this skill. Express integrations as HTTP contracts, channel contracts, credential requirements, and implementation acceptance criteria.
 
 ## Install This Skill
 
@@ -37,11 +39,11 @@ https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/reference
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/webhook-http.md
 ```
 
-After installation, ask the agent to use `debox-http` and read `references/channel-integration.md` when implementing a DeBox webhook channel.
+After installation, ask the agent to use `debox-http` as a DeBox developer integration guide. For webhook channel development, read `references/channel-integration.md` first.
 
 ## First Action
 
-Classify the request:
+Classify the developer request:
 
 - **Receive messages / poll bot updates**: read `references/message-http.md` section `Receive Messages`.
 - **Send a bot reply to a chat/user/group**: read `references/message-http.md` section `Bot Send Message`.
@@ -52,7 +54,7 @@ Classify the request:
 
 ## Required Credentials
 
-Use the HTTP tool's secret store or user-provided secret references. Never ask for private keys, mnemonics, or seed phrases.
+Use the host application's secret store or user-provided secret references. Never ask for private keys, mnemonics, or seed phrases.
 
 - `DEBOX_API_KEY`: required for all HTTP requests.
 - `DEBOX_API_SECRET`: required for bot polling and bot send endpoints that need `nonce`, `timestamp`, and `signature` headers.
@@ -62,21 +64,22 @@ Use the HTTP tool's secret store or user-provided secret references. Never ask f
 
 ## HTTP Rules
 
-- Keep secrets in headers or the HTTP tool's secret store, not in URLs, logs, command text, frontend code, or committed files.
-- Use the HTTP tool's structured request object. Do not generate curl, bash, Python, Go, SDK, or local executable snippets.
+- Keep secrets in headers or the host secret store, not in URLs, logs, command text, frontend code, or committed files.
+- Describe requests as structured HTTP objects or host integration contracts. Do not generate curl, bash, Python, Go, SDK, or local executable snippets.
 - Use `POST` for message sending and SDK-derived bot update polling.
 - For signed bot endpoints, if the HTTP-only environment cannot compute `sha1(secret + nonce + timestamp)`, ask the user or a trusted backend to provide `nonce`, `timestamp`, and `signature`; do not invent signatures.
 - For bot polling, remember DeBox retains unread polling messages only briefly, about 1 minute; poll frequently or use webhook callbacks.
 - If a webhook URL is configured in the DeBox bot panel, SDK-style polling may not receive messages because callbacks go to the webhook first.
 - To receive group messages, the bot must be in the group; enable group message monitoring only when needed. Without it, the bot may only receive mentions.
 
-## Output Handling
+## Developer Guidance
 
-When making HTTP calls for a user, report:
+When helping a developer implement DeBox integration, report:
 
 - endpoint and operation, without secret values
-- HTTP status
-- DeBox response `ok`, `code`, `message`, `result`, or `data`
-- parsed `update.id`, `message.chat.id`, `message.chat.type`, `message.text`, or returned `message_id` when present
+- required request method, headers, body type, and body fields
+- expected DeBox response `ok`, `code`, `message`, `result`, or `data`
+- parsed fields such as `update.id`, `message.chat.id`, `message.chat.type`, `message.text`, or returned `message_id`
+- host-side responsibilities such as webhook validation, deduplication, secret storage, retry policy, and tests
 
-If a request fails, do not retry blindly. Check credentials, Bot webhook-vs-polling configuration, target IDs, and DeBox API error message.
+For implementation failures, do not suggest blind retries. Check credentials, Bot webhook-vs-polling configuration, target IDs, DeBox API error messages, and the host's channel routing state.
