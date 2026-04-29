@@ -57,7 +57,7 @@ Create `debox/SKILL.md` with:
 
 ```markdown
 ---
-name: debox skill
+name: debox-skill
 description: Use when an agent needs to use DeBox OpenPlatform for safe one-shot community operations such as sending group/private messages, checking DeBox credentials, parsing group IDs, or guiding DeBox Bot registration, MiniApp, ChatWidget, or Shares integration. Prefer the bundled debox/scripts/debox.sh wrapper for executable operations and do not use for long-running Bot runtime management.
 ---
 
@@ -1166,7 +1166,7 @@ assert_file "debox/references/chatwidget.md"
 assert_file "debox/references/shares-safety.md"
 assert_file "debox/references/troubleshooting.md"
 
-assert_contains "debox/SKILL.md" "name: debox skill"
+assert_contains "debox/SKILL.md" "name: debox-skill"
 assert_contains "debox/SKILL.md" "debox/scripts/debox.sh <command> --json"
 assert_contains "debox/references/credentials.md" "DEBOX_API_KEY"
 assert_contains "debox/references/messaging.md" "message send-group"

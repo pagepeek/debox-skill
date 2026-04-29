@@ -117,10 +117,9 @@ troubleshooting="$ROOT_DIR/debox/references/troubleshooting.md"
 wrapper_error_codes=()
 while IFS= read -r code; do
   wrapper_error_codes+=("$code")
-done < <(sed -nE 's/.*fail_bootstrap "([A-Z0-9_]+)".*/\1/p' "$wrapper" | sort -u)
+done < <(grep -oE '"[A-Z0-9_]+(_FAILED|_NOT_FOUND|_MISMATCH|_INVALID|_SET|_PLATFORM)"' "$wrapper" | tr -d '"' | sort -u)
 
 for code in "${wrapper_error_codes[@]}"; do
-  grep -Fq -- "$code" "$wrapper" || fail "wrapper is missing error code: $code"
   grep -Fq -- "$code" "$troubleshooting" || fail "troubleshooting is missing error code: $code"
 done
 
