@@ -16,6 +16,32 @@ json_escape() {
   value="${value//$'\t'/\\t}"
   value="${value//$'\b'/\\b}"
   value="${value//$'\f'/\\f}"
+  value="${value//$'\001'/\\u0001}"
+  value="${value//$'\002'/\\u0002}"
+  value="${value//$'\003'/\\u0003}"
+  value="${value//$'\004'/\\u0004}"
+  value="${value//$'\005'/\\u0005}"
+  value="${value//$'\006'/\\u0006}"
+  value="${value//$'\007'/\\u0007}"
+  value="${value//$'\013'/\\u000b}"
+  value="${value//$'\016'/\\u000e}"
+  value="${value//$'\017'/\\u000f}"
+  value="${value//$'\020'/\\u0010}"
+  value="${value//$'\021'/\\u0011}"
+  value="${value//$'\022'/\\u0012}"
+  value="${value//$'\023'/\\u0013}"
+  value="${value//$'\024'/\\u0014}"
+  value="${value//$'\025'/\\u0015}"
+  value="${value//$'\026'/\\u0016}"
+  value="${value//$'\027'/\\u0017}"
+  value="${value//$'\030'/\\u0018}"
+  value="${value//$'\031'/\\u0019}"
+  value="${value//$'\032'/\\u001a}"
+  value="${value//$'\033'/\\u001b}"
+  value="${value//$'\034'/\\u001c}"
+  value="${value//$'\035'/\\u001d}"
+  value="${value//$'\036'/\\u001e}"
+  value="${value//$'\037'/\\u001f}"
   printf '%s' "$value"
 }
 
@@ -198,6 +224,10 @@ verify_checksum() {
 ensure_checksums() {
   if [[ -f "$checksums_path" ]]; then
     return 0
+  fi
+
+  if [[ -e "$checksums_path" ]]; then
+    fail_bootstrap "CHECKSUM_CACHE_PATH_INVALID" "Cached debox CLI checksums path is not a regular file: $checksums_path." "Remove this path or set DEBOX_SKILL_CACHE_DIR to a valid cache directory."
   fi
 
   make_temp_file tmp_checksums

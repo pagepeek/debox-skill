@@ -44,6 +44,17 @@ assert_starts_with() {
   fi
 }
 
+assert_json_parses() {
+  local input="$1"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json,sys; json.loads(sys.stdin.read())' <<<"$input" || fail "expected output to parse as JSON: $input"
+  elif command -v python >/dev/null 2>&1; then
+    python -c 'import json,sys; json.loads(sys.stdin.read())' <<<"$input" || fail "expected output to parse as JSON: $input"
+  else
+    return 0
+  fi
+}
+
 make_tmp_dir() {
   local var_name="$1"
   local created
@@ -303,6 +314,7 @@ test_cache_dir_create_failure_json_is_clean() {
   assert_contains "$output" 'CACHE_DIR_CREATE_FAILED'
   assert_contains "$output" '"hint"'
   assert_not_contains "$output" 'mkdir:'
+  assert_json_parses "$output"
 }
 
 test_home_unset_without_cache_dir_is_json() {
@@ -382,6 +394,67 @@ test_control_character_test_platform_json_is_clean() {
   assert_contains "$output" 'UNSUPPORTED_PLATFORM'
   assert_contains "$output" '"hint"'
   assert_not_contains "$output" $'\001'
+}
+
+test_control_character_base_url_json_parses() {
+  local tmp
+  make_tmp_dir tmp
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases"$'\001' \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected control-character base URL failure"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CLI_DOWNLOAD_FAILED'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" $'\001'
+  assert_json_parses "$output"
+}
+
+test_checksums_cache_path_directory_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  local release_dir="$release_root/v0.1.0"
+  mkdir -p "$release_dir" "$tmp/cache/checksums/checksums-0.1.0.txt"
+  cat > "$release_dir/debox-0.1.0-darwin-arm64" <<'BIN'
+#!/usr/bin/env bash
+echo should-not-run-checksum-dir
+BIN
+  chmod +x "$release_dir/debox-0.1.0-darwin-arm64"
+  printf '%s  %s\n' "$(sha256_file "$release_dir/debox-0.1.0-darwin-arm64")" "debox-0.1.0-darwin-arm64" > "$release_dir/checksums.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected checksum cache directory path to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'CHECKSUM_CACHE_PATH_INVALID'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'should-not-run-checksum-dir'
+  assert_file_not_exists "$tmp/cache/checksums/checksums-0.1.0.txt/debox-bootstrap"
+  assert_json_parses "$output"
 }
 
 test_cached_binary_checksum_mismatch_fails_closed() {
@@ -569,6 +642,8 @@ main() {
   test_home_unset_without_cache_dir_is_json
   test_cached_binary_path_directory_is_json
   test_control_character_test_platform_json_is_clean
+  test_control_character_base_url_json_parses
+  test_checksums_cache_path_directory_is_json
   test_cached_binary_checksum_mismatch_fails_closed
   test_cached_binary_sha_failure_is_json
   test_unreadable_checksums_file_is_json
