@@ -41,7 +41,7 @@ https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/reference
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/webhook-http.md
 ```
 
-After installation, ask the agent to use `debox-http` as a DeBox developer integration guide. For a human who is new to DeBox, read `references/setup-for-developers.md` first. For webhook channel development, read `references/channel-integration.md`.
+After installation, ask the agent to use `debox-http` as a DeBox developer integration guide. For a non-technical user, read `references/setup-for-developers.md` first and run the copy-paste setup flow. For webhook channel development, read `references/channel-integration.md`.
 
 ## First Action
 
@@ -57,19 +57,19 @@ Classify the developer request:
 
 ## Required Setup Gate
 
-Before designing or implementing any DeBox webhook channel, first guide the human developer through `references/setup-for-developers.md` and collect a yes/no readiness checklist. Do not only send the developer to `https://developer.debox.pro`; use the setup reference and official Bot Guide links to explain what fields must exist and what to do if the page is incomplete. Do not proceed to channel architecture or code until the developer confirms:
+Before designing or implementing any DeBox webhook channel, first run the copy-paste setup flow in `references/setup-for-developers.md`. Assume the user may know nothing except how to paste DeBox values into chat. The agent must parse pasted values, store them in the target runtime configuration, create safe templates when useful, and avoid echoing values back. Do not proceed to channel architecture or code until setup reaches:
 
 ```text
 DeBox account registered: yes
 Developer platform accessible: yes
-API Key obtained and stored server-side: yes
+API Key obtained from UI or user and stored by the agent: yes
 App Domain configured: yes
 Webhook URL configured or planned for a public HTTPS endpoint: yes
-Webhook Key obtained and stored server-side, or waiting for Webhook URL activation: yes
+Webhook Key obtained from UI or user and stored by the agent, or waiting for Webhook URL activation: yes
 Monitor group message setting chosen intentionally: yes
 ```
 
-If any item is not ready, keep the work in setup mode. Explain the missing step and avoid implementation details beyond what is needed to complete setup.
+If any item is not ready, keep the work in setup mode. Perform the next setup action yourself when tools and permissions allow it; otherwise ask the human for the smallest required approval or missing DeBox value. Never hard-code real DeBox keys into source code or commit them to git; use local env files or deployment secrets for real values.
 
 ## Required Credentials
 
