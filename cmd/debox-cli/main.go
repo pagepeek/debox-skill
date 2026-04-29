@@ -430,6 +430,13 @@ func findString(value interface{}, keys ...string) string {
 			}
 		}
 	}
+	for _, raw := range m {
+		if nested, ok := raw.(map[string]interface{}); ok {
+			if s := findString(nested, keys...); s != "" {
+				return s
+			}
+		}
+	}
 	return ""
 }
 
