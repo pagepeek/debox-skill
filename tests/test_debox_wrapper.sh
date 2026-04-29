@@ -305,6 +305,85 @@ test_cache_dir_create_failure_json_is_clean() {
   assert_not_contains "$output" 'mkdir:'
 }
 
+test_home_unset_without_cache_dir_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  local release_root="$tmp/releases"
+  mkdir -p "$release_root/v0.1.0"
+
+  set +e
+  local output
+  output="$(
+    env -u HOME -u DEBOX_SKILL_CACHE_DIR \
+      DEBOX_SKILL_CLI_VERSION="0.1.0" \
+      DEBOX_SKILL_CLI_BASE_URL="file://$release_root" \
+      DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+      DEBOX_SKILL_SKIP_CHECKSUM="0" \
+      "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected missing HOME/cache dir to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'HOME_NOT_SET'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'unbound variable'
+}
+
+test_cached_binary_path_directory_is_json() {
+  local tmp
+  make_tmp_dir tmp
+
+  mkdir -p "$tmp/cache/bin/debox-0.1.0-darwin-arm64" "$tmp/cache/checksums"
+  printf '%s  %s\n' "0000000000000000000000000000000000000000000000000000000000000000" "debox-0.1.0-darwin-arm64" > "$tmp/cache/checksums/checksums-0.1.0.txt"
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM="darwin-arm64" \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected directory binary cache path to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'BINARY_CACHE_PATH_INVALID'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" 'is a directory'
+  assert_not_contains "$output" 'Is a directory'
+}
+
+test_control_character_test_platform_json_is_clean() {
+  local tmp
+  make_tmp_dir tmp
+
+  set +e
+  local output
+  output="$(
+    DEBOX_SKILL_CLI_VERSION="0.1.0" \
+    DEBOX_SKILL_CLI_BASE_URL="file://$tmp/releases" \
+    DEBOX_SKILL_CACHE_DIR="$tmp/cache" \
+    DEBOX_SKILL_TEST_PLATFORM=$'bad\001platform' \
+    DEBOX_SKILL_SKIP_CHECKSUM="0" \
+    "$WRAPPER" env check --json 2>&1
+  )"
+  local status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || fail "expected control-character platform to fail"
+  assert_starts_with "$output" '{'
+  assert_contains "$output" 'UNSUPPORTED_PLATFORM'
+  assert_contains "$output" '"hint"'
+  assert_not_contains "$output" $'\001'
+}
+
 test_cached_binary_checksum_mismatch_fails_closed() {
   local tmp
   make_tmp_dir tmp
@@ -487,6 +566,9 @@ main() {
   test_checksum_entry_missing_does_not_cache_binary
   test_binary_download_failure_json_is_clean
   test_cache_dir_create_failure_json_is_clean
+  test_home_unset_without_cache_dir_is_json
+  test_cached_binary_path_directory_is_json
+  test_control_character_test_platform_json_is_clean
   test_cached_binary_checksum_mismatch_fails_closed
   test_cached_binary_sha_failure_is_json
   test_unreadable_checksums_file_is_json

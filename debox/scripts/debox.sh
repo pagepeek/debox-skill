@@ -5,7 +5,7 @@ ORIGINAL_ARGS=("$@")
 
 DEFAULT_VERSION="0.1.0"
 DEFAULT_BASE_URL="https://github.com/debox-pro/debox-cli/releases/download"
-DEFAULT_CACHE_DIR="$HOME/.cache/debox-skill"
+DEFAULT_CACHE_SUBDIR=".cache/debox-skill"
 
 json_escape() {
   local value="$1"
@@ -45,8 +45,27 @@ fail_bootstrap() {
   exit 1
 }
 
+resolve_cache_dir() {
+  if [[ -n "${DEBOX_SKILL_CACHE_DIR:-}" ]]; then
+    printf '%s' "$DEBOX_SKILL_CACHE_DIR"
+    return 0
+  fi
+
+  if [[ -n "${HOME:-}" ]]; then
+    printf '%s/%s' "$HOME" "$DEFAULT_CACHE_SUBDIR"
+    return 0
+  fi
+
+  fail_bootstrap "HOME_NOT_SET" "HOME is not set and DEBOX_SKILL_CACHE_DIR was not provided." "Set DEBOX_SKILL_CACHE_DIR or run with HOME set so the debox CLI cache can be located."
+}
+
 resolve_platform() {
   if [[ -n "${DEBOX_SKILL_TEST_PLATFORM:-}" ]]; then
+    case "$DEBOX_SKILL_TEST_PLATFORM" in
+      *[!abcdefghijklmnopqrstuvwxyz0123456789-]*)
+        fail_bootstrap "UNSUPPORTED_PLATFORM" "Unsupported platform override." "DEBOX_SKILL_TEST_PLATFORM must be one of darwin-arm64, darwin-amd64, linux-arm64, or linux-amd64."
+        ;;
+    esac
     printf '%s' "$DEBOX_SKILL_TEST_PLATFORM"
     return 0
   fi
@@ -194,8 +213,8 @@ ensure_checksums() {
 
 version="${DEBOX_SKILL_CLI_VERSION:-$DEFAULT_VERSION}"
 base_url="${DEBOX_SKILL_CLI_BASE_URL:-$DEFAULT_BASE_URL}"
-cache_dir="${DEBOX_SKILL_CACHE_DIR:-$DEFAULT_CACHE_DIR}"
 skip_checksum="${DEBOX_SKILL_SKIP_CHECKSUM:-0}"
+cache_dir="$(resolve_cache_dir)"
 
 platform="$(resolve_platform)"
 ensure_supported_platform "$platform"
@@ -209,6 +228,10 @@ checksums_url="$release_base_url/checksums.txt"
 
 if ! mkdir -p "$cache_dir/bin" "$cache_dir/checksums" 2>/dev/null; then
   fail_bootstrap "CACHE_DIR_CREATE_FAILED" "Failed to create debox CLI cache directories." "Check that DEBOX_SKILL_CACHE_DIR is writable."
+fi
+
+if [[ -e "$binary_path" && ! -f "$binary_path" ]]; then
+  fail_bootstrap "BINARY_CACHE_PATH_INVALID" "Cached debox CLI path is not a regular file: $binary_path." "Remove this path or set DEBOX_SKILL_CACHE_DIR to a valid cache directory."
 fi
 
 tmp_binary=""
@@ -241,6 +264,9 @@ if [[ ! -f "$binary_path" ]]; then
 
   move_into_cache "$tmp_binary" "$binary_path" "BINARY_CACHE_WRITE_FAILED" "Failed to cache debox CLI binary."
   tmp_binary=""
+  if [[ ! -f "$binary_path" ]]; then
+    fail_bootstrap "BINARY_CACHE_PATH_INVALID" "Cached debox CLI path is not a regular file: $binary_path." "Remove this path or set DEBOX_SKILL_CACHE_DIR to a valid cache directory."
+  fi
 else
   if [[ "$skip_checksum" == "1" ]]; then
     printf 'Warning: DEBOX_SKILL_SKIP_CHECKSUM=1; executing unverified debox CLI binary.\n' >&2
