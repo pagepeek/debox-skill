@@ -4,7 +4,7 @@ set -euo pipefail
 ORIGINAL_ARGS=("$@")
 
 DEFAULT_VERSION="0.1.0"
-DEFAULT_BASE_URL="https://github.com/debox-pro/debox-cli/releases/download"
+DEFAULT_BASE_URL="https://github.com/pagepeek/debox-skill/releases/download"
 DEFAULT_CACHE_SUBDIR=".cache/debox-skill"
 
 json_escape() {
