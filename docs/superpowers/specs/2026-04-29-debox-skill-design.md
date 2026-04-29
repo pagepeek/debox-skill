@@ -12,7 +12,7 @@ The skill should let an agent safely perform or guide these tasks:
 - Query group and user information when the CLI supports it.
 - Check local credential and CLI readiness.
 - Route MiniApp, ChatWidget, Shares, and Bot registration questions to concise references.
-- Refuse or require explicit confirmation for asset-moving or signing-related flows.
+- Refuse executable asset-moving or signing flows; provide only review, parameter explanation, placeholders, dry-run examples, or high-level pointers for those requests.
 
 ## Repository Shape
 
@@ -228,7 +228,7 @@ For Shares, signing, transfer, Swap, or chain buttons:
 1. Load `references/shares-safety.md`.
 2. Treat the task as high risk.
 3. Generate templates or explain parameters only by default.
-4. Require explicit user confirmation before any real asset-moving action.
+4. Keep real asset-moving actions outside v1 executable scope, even with explicit confirmation.
 
 ## References
 
@@ -290,4 +290,3 @@ After this spec is approved, the next step is to write an implementation plan fo
 3. Writing `scripts/debox.sh`.
 4. Writing concise reference files.
 5. Defining or stubbing the external compiled CLI release contract.
-

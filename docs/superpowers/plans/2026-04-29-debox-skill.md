@@ -497,7 +497,7 @@ download_file() {
     return 0
   fi
 
-  fail_bootstrap "CURL_NOT_FOUND" "curl is required to download the DeBox CLI." "Install curl or pre-populate DEBOX_SKILL_CACHE_DIR with the DeBox CLI binary."
+  fail_bootstrap "MISSING_CURL" "curl is required to download the DeBox CLI." "Install curl or pre-populate DEBOX_SKILL_CACHE_DIR with the DeBox CLI binary."
 }
 
 sha256_file() {
@@ -920,7 +920,7 @@ Use this only as an environment check. Keep a normal browser fallback.
 
 ## Wallet Environment
 
-Inside DeBox, the app may have injected wallet objects such as `window.ethereum` or `window.solana`. Use them for wallet authorization, address access, signatures, and transactions only after explicit user action.
+Inside DeBox, the app may have injected wallet objects such as `window.ethereum` or `window.solana`. Use them for wallet authorization and address access only after explicit user action. Route signing, transfer, and transaction requests to `shares-safety.md`.
 
 ## Secret Handling
 
@@ -928,7 +928,7 @@ Do not put `DEBOX_API_KEY`, `DEBOX_APP_SECRET`, or equivalent OpenPlatform crede
 
 ## Agent Guidance
 
-For MiniApp requests, provide an integration checklist and minimal examples. Do not generate transaction-executing code unless the user explicitly asks and confirms the asset-moving behavior.
+For MiniApp requests, provide an integration checklist and minimal examples. For transaction-related requests, provide only placeholder, review, or dry-run examples with no signing or submission calls.
 ```
 
 - [ ] **Step 3: Write ChatWidget reference**
@@ -983,11 +983,11 @@ export function ChatPanel() {
 
 ## Conversation ID
 
-The widget needs a DeBox conversation ID. If obtaining it requires OpenPlatform credentials, put that lookup on a private backend and keep credentials out of frontend code.
+The widget needs a DeBox conversation ID, which refers to the chat group ID used by ChatWidget. Current ChatWidget support is scoped to on-chain token-holding group chats. If obtaining the conversation ID requires OpenPlatform credentials, put that lookup on a private backend and keep credentials out of frontend code.
 
 ## Agent Guidance
 
-For ChatWidget requests, help the user choose HTML or React integration, explain where `projectId` and `conversationId` come from, and avoid runtime/Bot design unless explicitly requested.
+For ChatWidget requests, help the user choose HTML or React integration and explain where `projectId` and `conversationId` come from. Avoid runtime/Bot design; for Bot runtime requests, explain that it is outside this skill's executable scope and provide only high-level pointers.
 ```
 
 - [ ] **Step 4: Write Shares safety reference**
@@ -1007,26 +1007,33 @@ Treat these tasks as high risk. By default, generate templates, explain paramete
 
 - Never ask for private keys, mnemonics, or seed phrases.
 - Never hide recipient, token, chain ID, amount, allowance, calldata, or contract address from the user.
-- Do not construct a real transfer, Swap, signing, or Shares execution without explicit user confirmation.
+- Even with explicit confirmation, this v1 skill does not broadcast, sign, or send real transactions, call Swap, enable real allowances, or integrate production Shares contract addresses into deployable code.
 - Do not place App Secret or API keys in frontend code.
 - Prefer testnet or dry-run examples when possible.
 
 ## Allowed Without Extra Confirmation
 
 - Explain DeBox Shares concepts.
-- Generate a non-executed contract or frontend template.
+- Generate placeholder-only contract or frontend templates with no production addresses, no real amounts, and no transaction submission or signing calls.
 - Decode or summarize user-provided transaction parameters.
 - Identify which fields need user review.
 
-## Requires Explicit Confirmation
+## Explicit Confirmation Can Allow
 
-- Sending a transaction.
+- Review of user-provided code, calldata, or transaction parameters.
+- Placeholder templates that still avoid production addresses, real amounts, and execution calls.
+- Parameter explanation for a user-provided chain, token, amount, recipient, allowance, calldata, or contract.
+- High-level conceptual next steps or official-doc pointers only, with no real recipient, amount, calldata, allowance, signing, or broadcast steps.
+
+## Outside V1 Executable Scope
+
+- Broadcasting, signing, or sending a real transaction.
 - Creating calldata for a specific real recipient and amount.
-- Enabling ERC20 allowance.
+- Enabling a real ERC20 allowance.
 - Calling Swap.
 - Integrating production Shares contract addresses into deployable code.
 
-When confirmation is needed, summarize the exact chain, token, amount, recipient, contract, and risk before proceeding.
+When explicit confirmation is needed for review, explanation, placeholder templates, or outside-the-skill conceptual pointers, summarize the exact chain, token, amount, recipient, contract, and risk before proceeding.
 ```
 
 - [ ] **Step 5: Write troubleshooting reference**
@@ -1045,7 +1052,7 @@ Use this reference when `debox/scripts/debox.sh` fails, DeBox OpenPlatform retur
 - `CHECKSUM_DOWNLOAD_FAILED`: release is missing `checksums.txt` or the base URL is wrong.
 - `CHECKSUM_NOT_FOUND`: `checksums.txt` lacks the platform binary entry.
 - `CHECKSUM_MISMATCH`: do not run the binary; verify the release source.
-- `CURL_NOT_FOUND`: install `curl` or pre-populate the cache.
+- `MISSING_CURL`: install `curl` or pre-populate the cache.
 
 ## Common DeBox API Errors
 

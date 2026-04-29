@@ -137,7 +137,7 @@ download_file() {
 
   if ! curl_error="$(curl -fsSL "$url" -o "$destination" 2>&1)"; then
     rm -f "$destination" 2>/dev/null || true
-    fail_bootstrap "$code" "$message: $url" "$hint"
+    fail_bootstrap "$code" "$message" "$hint"
   fi
 }
 
