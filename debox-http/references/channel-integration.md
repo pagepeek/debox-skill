@@ -4,6 +4,24 @@ Use this reference when any agent host needs to treat DeBox as a messaging chann
 
 Do not assume a specific agent runtime, framework, repository layout, or programming language.
 
+## Setup Gate
+
+Before channel design or implementation, complete the human setup flow in `setup-for-developers.md`.
+
+Required readiness confirmation:
+
+```text
+DeBox account registered: yes
+Developer platform accessible: yes
+API Key obtained and stored server-side: yes
+App Domain configured: yes
+Webhook URL configured or planned for a public HTTPS endpoint: yes
+Webhook Key obtained and stored server-side, or waiting for Webhook URL activation: yes
+Monitor group message setting chosen intentionally: yes
+```
+
+If any item is not ready, do not design code yet. Stay in setup mode and help the human developer finish DeBox platform configuration first.
+
 ## Channel Model
 
 Represent DeBox as one channel adapter with two host-facing operations:
@@ -101,24 +119,25 @@ Validation rules:
 - Deduplicate before invoking the agent.
 - Return a successful HTTP status after accepting or ignoring a duplicate update.
 
-Expected DeBox update body shape:
+Expected DeBox Chat Bot webhook body shape:
 
 ```json
 {
-  "id": 123,
-  "message": {
-    "message_id": "msg-id",
-    "chat": { "id": "chat-id", "type": "group" },
-    "from": { "id": "user-id", "name": "name" },
-    "text": "hello"
-  }
+  "from_user_id": "sender-debox-id",
+  "to_user_id": "bot-debox-id",
+  "language": "en",
+  "group_id": "group-id-or-empty",
+  "message": "message without bot mention",
+  "mention_users": "mentioned-users",
+  "message_raw": "complete raw message"
 }
 ```
 
 Compatibility rules:
 
-- Treat `update.id` as a stable identifier even if the JSON parser exposes it as a number; store the dedupe key as a string.
-- Accept `message.message_id` as optional. If missing, use `debox:update:<update.id>` as the internal provider message id.
+- DeBox Chat Bot webhook callbacks may not include a provider message id. Generate an internal provider message id from a host event id or a stable hash of the callback body.
+- When `group_id` is non-empty, set `conversation_type` to `group` and `conversation_id` to `group_id`.
+- When `group_id` is empty, set `conversation_type` to `private` and choose the reply conversation id from the host's DeBox private-chat send contract.
 - Accept only text messages for the first implementation unless the host explicitly supports media or callbacks.
 - Preserve the raw DeBox update in a debug-safe field or state record, but never include secrets.
 
@@ -127,21 +146,21 @@ Map the webhook body into the channel message shape:
 ```json
 {
   "provider": "debox",
-  "provider_message_id": "msg-id",
-  "provider_update_id": "123",
-  "conversation_id": "chat-id",
+  "provider_message_id": "host-generated-id",
+  "provider_update_id": "host-generated-id",
+  "conversation_id": "group-id",
   "conversation_type": "group",
-  "reply_target": "group:chat-id",
-  "sender_id": "user-id",
-  "sender_name": "name",
-  "text": "hello",
+  "reply_target": "group:group-id",
+  "sender_id": "sender-debox-id",
+  "sender_name": null,
+  "text": "message without bot mention",
   "raw": {}
 }
 ```
 
 Filtering rules:
 
-- Ignore webhook updates without `message.text` unless the agent explicitly handles callbacks or media.
+- Ignore webhook updates without `message` unless the agent explicitly handles callbacks or media.
 - Deduplicate by `provider_update_id`; use `provider_message_id` as a secondary key.
 - If the bot should only respond to mentions, check whether `message.text` contains the bot display name.
 - Pass normalized messages to the agent only after validation and deduplication.

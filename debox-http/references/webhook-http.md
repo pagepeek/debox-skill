@@ -29,23 +29,24 @@ process update.message or update.callback_query
 
 ## Update Handling
 
-The webhook body follows the same high-level model as SDK updates:
+The Chat Bot webhook body uses this high-level shape:
 
 ```json
 {
-  "id": 123,
-  "message": {
-    "message_id": "msg-id",
-    "chat": { "id": "chat-id", "type": "group" },
-    "from": { "id": "user-id", "name": "name" },
-    "text": "hello"
-  }
+  "from_user_id": "sender-debox-id",
+  "to_user_id": "bot-debox-id",
+  "language": "en",
+  "group_id": "group-id-or-empty",
+  "message": "message without bot mention",
+  "mention_users": "mentioned-users",
+  "message_raw": "complete raw message"
 }
 ```
 
 After parsing a message:
 
-1. Read `message.chat.id` and `message.chat.type`.
-2. Read `message.text`.
-3. If replying, use `POST /openapi/bot/sendMessage` with those chat fields.
-4. Deduplicate by update `id` or message identifier if your server can receive retries.
+1. Read `from_user_id` as the sender id.
+2. Read `group_id`; when it is non-empty, treat the conversation as a group, otherwise treat it as a private chat.
+3. Read `message` as the agent-facing text and preserve `message_raw` only when useful for mention detection or debugging.
+4. If replying, use `POST /openapi/bot/sendMessage` with the derived chat id and chat type.
+5. Deduplicate by a host-generated event id or a stable hash of the callback body if the host can receive retries.

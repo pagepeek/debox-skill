@@ -26,6 +26,7 @@ Required files:
 ~/.claude/skills/debox-http/references/auth-http.md
 ~/.claude/skills/debox-http/references/channel-integration.md
 ~/.claude/skills/debox-http/references/message-http.md
+~/.claude/skills/debox-http/references/setup-for-developers.md
 ~/.claude/skills/debox-http/references/webhook-http.md
 ```
 
@@ -36,21 +37,39 @@ https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/SKILL.md
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/auth-http.md
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/channel-integration.md
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/message-http.md
+https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/setup-for-developers.md
 https://raw.githubusercontent.com/pagepeek/debox-skill/main/debox-http/references/webhook-http.md
 ```
 
-After installation, ask the agent to use `debox-http` as a DeBox developer integration guide. For webhook channel development, read `references/channel-integration.md` first.
+After installation, ask the agent to use `debox-http` as a DeBox developer integration guide. For a human who is new to DeBox, read `references/setup-for-developers.md` first. For webhook channel development, read `references/channel-integration.md`.
 
 ## First Action
 
 Classify the developer request:
 
+- **New DeBox developer setup / API Key / Webhook Key / Webhook URL**: read `references/setup-for-developers.md`.
 - **Receive messages / poll bot updates**: read `references/message-http.md` section `Receive Messages`.
 - **Send a bot reply to a chat/user/group**: read `references/message-http.md` section `Bot Send Message`.
 - **Integrate DeBox as an agent channel**: read `references/channel-integration.md`.
 - **Send OpenPlatform group push message**: read `references/message-http.md` section `OpenPlatform Group Send`.
 - **Webhook callback handling**: read `references/webhook-http.md`.
 - **Credentials or signing**: read `references/auth-http.md`.
+
+## Required Setup Gate
+
+Before designing or implementing any DeBox webhook channel, first guide the human developer through `references/setup-for-developers.md` and collect a yes/no readiness checklist. Do not proceed to channel architecture or code until the developer confirms:
+
+```text
+DeBox account registered: yes
+Developer platform accessible: yes
+API Key obtained and stored server-side: yes
+App Domain configured: yes
+Webhook URL configured or planned for a public HTTPS endpoint: yes
+Webhook Key obtained and stored server-side, or waiting for Webhook URL activation: yes
+Monitor group message setting chosen intentionally: yes
+```
+
+If any item is not ready, keep the work in setup mode. Explain the missing step and avoid implementation details beyond what is needed to complete setup.
 
 ## Required Credentials
 
